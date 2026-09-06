@@ -26,6 +26,7 @@ class Build {
         std::cout << "  -I<path>     Include a specified directory\n";
         std::cout << "  -F<flags>    Add specified flags\n";
         std::cout << "  -L<library>  include a specified library\n";
+        std::cout << "  -r --run     run output file if compiled\n";
         std::cout << "Avaible Versions:\n";
         std::cout << "  -std=c++98\n";
         std::cout << "  -std=c++11\n";
@@ -78,7 +79,9 @@ int main(int argc, char *argv[]) {
     std::string output = "";
     std::string flags = "";
     std::string inputFile = "";
+    std::string filename = "HelpMake.txt";
     bool verbose = false;
+    bool run = false;
     Build build;
 
     if (argc < 2) {
@@ -166,34 +169,64 @@ int main(int argc, char *argv[]) {
                 flags += "-L" + libPath;
             } else if (arg == "-v" || arg == "--verbose") {
                 verbose = true;
+            } else if (arg == "-r" || arg == "--run") {
+                run = true;
+            } else if (arg.rfind("/", 0) == 0 || arg.rfind(".", 0) != 0) {
+                std::string path = std::string(arg);
+
+                if (!path.empty() && (path.back() == '/' || path.back() == '\\')) {
+                    filename = path + "HelpMake.txt";
+                } else if (path.find('.') != std::string::npos) {
+                    filename = path;
+                } else if (std::filesystem::is_directory(path)) {
+                    filename = path + "/HelpMake.txt";
+                } else {
+                    inputFile += " " + path;
+                }
             } else if (arg.rfind("-", 0) != 0) {
-                std::string n_inputFile = std::string(arg);
                 if (!inputFile.empty())
                     inputFile += " ";
-                inputFile += n_inputFile;
+                inputFile += std::string(arg);
             } else {
                 hp::printlnCl("Error: Unknown argument: " + std::string(arg), hp::Color::RED);
                 exit(EXIT_FAILURE);
             }
         }
 
-        if (compiler.empty()) {
-            hp::printlnCl("Error: No compiler specified. Use -Gcc, -Clang, -MSVC, or -Zig.", hp::Color::RED);
-            exit(EXIT_FAILURE);
+        if (!std::filesystem::exists(filename)) {
+            if (filename != "HelpMake.txt" && std::filesystem::exists("HelpMake.txt")) {
+                hp::printlnCl("Build file not found. Using default HelpMake.txt", hp::Color::YELLOW);
+                filename = "HelpMake.txt";
+            }
         }
 
-        if (inputFile.empty()) {
-            hp::printlnCl("Error: No input files specified.", hp::Color::RED);
-            exit(EXIT_FAILURE);
-        }
+        if (std::filesystem::exists(filename)) {
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run);
+            parser.parse();
+            parser.execute();
+        } else {
+            hp::printlnCl("Build file not found: " + filename, hp::Color::YELLOW);
+            hp::printlnCl("Building from command-line arguments only", hp::Color::CYAN);
 
-        if (output.empty()) {
-            hp::printlnCl("Warning: No output file specified. Using default: a.exe", hp::Color::YELLOW);
-            output = "a.exe";
+            if (compiler.empty()) {
+                hp::printlnCl("Error: No compiler specified. Use -Gcc, -Clang, -MSVC, or -Zig.", hp::Color::RED);
+                exit(EXIT_FAILURE);
+            }
+
+            if (inputFile.empty()) {
+                hp::printlnCl("Error: No input files specified.", hp::Color::RED);
+                exit(EXIT_FAILURE);
+            }
+
+            if (output.empty()) {
+                hp::printlnCl("Warning: No output file specified. Using default: a.exe", hp::Color::YELLOW);
+                output = "a.exe";
+            }
+
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run);
+            parser.parse();
+            parser.execute();
         }
-        Parser parser("HelpMake.txt", inputFile, compiler, version, output, flags, verbose);
-        parser.parse();
-        parser.execute();
     } else {
         hp::printlnCl("Error: Invalid command. Use \"--help\" for available commands.", hp::Color::RED);
     }

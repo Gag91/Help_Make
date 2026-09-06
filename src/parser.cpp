@@ -65,7 +65,8 @@ void Parser::parse() {
                 exit(EXIT_FAILURE);
             }
 
-            std::cout << "Founded Compiler: '" << compiler << "'" << std::endl;
+            if (verbose)
+                std::cout << "Founded Compiler: '" << compiler << "'" << std::endl;
         } else if (line.find("Version:") != std::string::npos) {
             size_t pos = line.find("Version:");
             std::string value = line.substr(pos + 8);
@@ -84,7 +85,8 @@ void Parser::parse() {
                 hp::printlnCl("Supported versions are: std=c++98, std=c++11, std=c++14, std=c++17, std=c++20, std=c++23, std=c++26.", hp::Color::YELLOW);
                 exit(EXIT_FAILURE);
             }
-            std::cout << "Founded Version: '" << version << "'" << std::endl;
+            if (verbose)
+                std::cout << "Founded Version: '" << version << "'" << std::endl;
         } else if (line.find("Output:") != std::string::npos) {
             size_t pos = line.find("Output:");
             std::string value = line.substr(pos + 7);
@@ -93,9 +95,11 @@ void Parser::parse() {
             output = value;
 
             if (output.empty()) {
-                hp::printlnCl("Error: Output not specified in the file.", hp::Color::RED);
-                exit(EXIT_FAILURE);
+                hp::printlnCl("Output not specified in the file. Using default: a.exe", hp::Color::YELLOW);
+                output = "a.exe";
             }
+            if (verbose)
+                std::cout << "Founded Output: " << output << "\n";
         } else if (line.find("InputFiles {") != std::string::npos) {
             isInputFileSet = true;
             continue;
@@ -116,8 +120,8 @@ void Parser::parse() {
             value.erase(0, value.find_first_not_of(" \t"));
             value.erase(value.find_last_not_of(" \t") + 1);
             flags += " " + value;
-
-            std::cout << "Founded Flags: '" << flags << "'" << std::endl;
+            if (verbose)
+                std::cout << "Founded Flags: '" << flags << "'" << std::endl;
         }
     }
 
@@ -128,12 +132,12 @@ void Parser::parse() {
         exit(EXIT_FAILURE);
     }
     if (version.empty()) {
-        hp::printlnCl("Error: Version not found in the file.", hp::Color::RED);
-        exit(EXIT_FAILURE);
+        hp::printlnCl("Version not specified in the file. Using default: c++20", hp::Color::YELLOW);
+        version = "std=c++20";
     }
     if (output.empty()) {
-        hp::printlnCl("Error: Output not found in the file.", hp::Color::RED);
-        exit(EXIT_FAILURE);
+        hp::printlnCl("Output not specified in the file. Using default: a.exe", hp::Color::YELLOW);
+        output = "a.exe";
     }
     if (inputFile.empty()) {
         hp::printlnCl("Error: InputFile not found in the file.", hp::Color::RED);
@@ -155,7 +159,7 @@ void Parser::execute() {
         hp::printlnCl("Error: Unsupported compiler specified.", hp::Color::RED);
         exit(EXIT_FAILURE);
     }
-    std::string command = comp + " -" + version + " " + inputFile + " -o " + output + " " + flags;
+    std::string command = comp + " -" + version + " " + inputFile + " -o " + output + " " + flags + (run ? " && " + output : "");
     std::cout << "\nCommand: " << command << "\n";
     std::string result = hp::command(command);
     if (result.empty()) {
