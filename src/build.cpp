@@ -31,6 +31,8 @@ class Build {
         std::cout << "  -std=c++14\n";
         std::cout << "  -std=c++17\n";
         std::cout << "  -std=c++20\n";
+        std::cout << "  -std=c++23\n";
+        std::cout << "  -std=c++26\n";
     }
 
     void version() const {
