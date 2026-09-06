@@ -16,11 +16,16 @@ void Parser::parse() {
                 hp::printlnCl("No version specified, using default: C++20", hp::YELLOW);
             }
             if (verbose) {
-                std::cout << "Compiler: " << compiler << "\n";
-                std::cout << "Version: " << version << "\n";
-                std::cout << "Input Files: " << inputFile << "\n";
-                std::cout << "Output: " << output << "\n";
-                std::cout << "Flags: " << flags << "\n";
+                std::cout << "Compiler:    " << hp::getColorCode(hp::YELLOW) << compiler << "\n"
+                          << hp::getColorCode(hp::RESET);
+                std::cout << "Version:     " << hp::getColorCode(hp::YELLOW) << version << "\n"
+                          << hp::getColorCode(hp::RESET);
+                std::cout << "Input Files:" << hp::getColorCode(hp::YELLOW) << inputFile << "\n"
+                          << hp::getColorCode(hp::RESET);
+                std::cout << "Output:      " << hp::getColorCode(hp::YELLOW) << output << "\n"
+                          << hp::getColorCode(hp::RESET);
+                std::cout << "Flags:      " << hp::getColorCode(hp::YELLOW) << flags << "\n"
+                          << hp::getColorCode(hp::RESET);
             }
             execute();
             hp::exit();
