@@ -9,8 +9,26 @@ void Parser::parse() {
 
     std::fstream file(filename);
     if (!file.is_open()) {
-        hp::printlnCl("Error: Could not open file: " + filename.string(), hp::Color::RED);
+        bool cmdInfo = !compiler.empty() && !output.empty() && !inputFile.empty();
+        if (cmdInfo) {
+            if (version.empty()) {
+                version = "std=c++20";
+                hp::printlnCl("No version specified, using default: C++20", hp::YELLOW);
+            }
+            if (verbose) {
+                std::cout << "Compiler: " << compiler << "\n";
+                std::cout << "Version: " << version << "\n";
+                std::cout << "Input Files: " << inputFile << "\n";
+                std::cout << "Output: " << output << "\n";
+                std::cout << "Flags: " << flags << "\n";
+            }
+            execute();
+            hp::exit();
+            return;
+        }
+        hp::printlnCl("Error: Could not open file: " + filename.string() + "\n", hp::Color::RED);
         hp::printlnCl("Make sure the file exists in the current directory.", hp::Color::YELLOW);
+        hp::printlnCl("Or provide all required arguments on the command line:", hp::Color::YELLOW);
         exit(EXIT_FAILURE);
     }
 
@@ -36,7 +54,7 @@ void Parser::parse() {
             if (compiler.empty()) {
                 hp::printlnCl("Error: Compiler not specified in the file.", hp::Color::RED);
                 exit(EXIT_FAILURE);
-            } else if (compiler != "gcc" && compiler != "clang" && compiler != "msvc") {
+            } else if (compiler != "gcc" && compiler != "clang" && compiler != "msvc" && compiler != "zig") {
                 hp::printlnCl("Error: Unsupported compiler specified: " + compiler, hp::Color::RED);
                 hp::printlnCl("Supported compilers are: gcc, clang, msvc.", hp::Color::YELLOW);
                 exit(EXIT_FAILURE);
@@ -126,6 +144,8 @@ void Parser::execute() {
         comp = "clang++";
     } else if (compiler == "msvc") {
         comp = "cl";
+    } else if (compiler == "zig") {
+        comp = "zig c++";
     } else {
         hp::printlnCl("Error: Unsupported compiler specified.", hp::Color::RED);
         exit(EXIT_FAILURE);
@@ -135,17 +155,23 @@ void Parser::execute() {
     std::string result = hp::command(command);
     if (result.empty()) {
         hp::printlnCl("Compilation successful. Output file: " + output, hp::Color::GREEN);
-    } else if (result == "'" + comp + "' is not recognized as an internal or external command, operable program or batch file.") {
-        if (compiler == "gcc") {
-            hp::printlnCl("Error: GCC compiler not found. Please ensure GCC is installed and added to the system PATH.\n", hp::Color::RED);
-        } else if (compiler == "clang") {
-            hp::printlnCl("Error: Clang compiler not found. Please ensure Clang is installed and added to the system PATH.\n", hp::Color::RED);
-        } else if (compiler == "msvc") {
-            hp::printlnCl("Error: MSVC compiler not found. Please ensure MSVC is installed and added to the system PATH.\n", hp::Color::RED);
-        }
     } else {
-        hp::printlnCl("Error: Compilation failed.", hp::Color::RED);
-        hp::printlnCl(result, hp::Color::RED);
+        std::string test = hp::command("where " + (compiler == "zig" ? "zig" : comp));
+        if (test == "INFO: Could not find files for the given pattern(s).\n") {
+
+            if (compiler == "gcc") {
+                hp::printlnCl("Error: GCC compiler not found. Please ensure GCC is installed and added to the system PATH.\n", hp::Color::RED);
+            } else if (compiler == "clang") {
+                hp::printlnCl("Error: Clang compiler not found. Please ensure Clang is installed and added to the system PATH.\n", hp::Color::RED);
+            } else if (compiler == "msvc") {
+                hp::printlnCl("Error: MSVC compiler not found. Please ensure MSVC is installed and added to the system PATH.\n", hp::Color::RED);
+            } else if (compiler == "zig") {
+                hp::printlnCl("Error: Zig compiler not found. Please ensure Zig is installed and added to the system PATH.\n", hp::Color::RED);
+            }
+        } else {
+            hp::printlnCl(result, hp::RED);
+            hp::printlnCl("Compilation Failed", hp::RED);
+        }
         exit(EXIT_FAILURE);
     }
 }

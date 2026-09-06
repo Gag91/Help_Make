@@ -21,6 +21,7 @@ class Build {
         std::cout << "  -Gcc   - GNU Compiler Collection\n";
         std::cout << "  -Clang - LLVM Compiler\n";
         std::cout << "  -MSVC  - Microsoft Visual C++ Compiler\n\n";
+        std::cout << "  -Zig   - Zig Compiler (C/C++ support)\n\n";
         std::cout << "Avaible Flags:\n";
         std::cout << "  -I<path>     Include a specified directory\n";
         std::cout << "  -F<flags>    Add specified flags\n";
@@ -37,7 +38,7 @@ class Build {
 
     void version() const {
         std::cout << "Help_Make (hm) - Build System\n";
-        std::cout << "Version: 1.0.0\n";
+        std::cout << "Version: 1.1.0\n";
         std::cout << "Author : Xavi99\n";
         std::cout << "Website: https://github.com/Xavi99/Help_Make\n";
         std::cout << "This program is licensed under the MIT License. See \"--license\" for details.\n\n";
@@ -77,6 +78,7 @@ int main(int argc, char *argv[]) {
     std::string output = "";
     std::string flags = "";
     std::string inputFile = "";
+    bool verbose = false;
     Build build;
     if (argc < 2) {
         build.help();
@@ -87,19 +89,15 @@ int main(int argc, char *argv[]) {
         build.help();
     }
 
-    if (argument == "--version" || argument == "-v") {
+    else if (argument == "--version" || argument == "-v") {
         build.version();
     }
 
-    if (argument == "--license" || argument == "-l") {
+    else if (argument == "--license" || argument == "-l") {
         build.license(hp::EXTENDED);
     }
 
-    if (argument == "--build" || argument == "-b") {
-        if (!std::filesystem::exists("HelpMake.txt")) {
-            hp::printlnCl("Error: HelpMake.txt file not found in the current directory.", hp::Color::RED);
-            exit(EXIT_FAILURE);
-        }
+    else if (argument == "--build" || argument == "-b") {
 
         for (int i = 2; i < argc; i++) {
             std::string_view arg = argv[i];
@@ -109,11 +107,17 @@ int main(int argc, char *argv[]) {
                 compiler = "clang";
             } else if (arg == "-MSVC" || arg == "-msvc") {
                 compiler = "msvc";
-            } else if (arg == "-std=c++98" || arg == "-std=c++11" || arg == "-std=c++14" ||
-                       arg == "-std=c++17" || arg == "-std=c++20" || arg == "-std=c++23" ||
-                       arg == "-std=c++26") {
+            } else if (arg == "-Zig" || arg == "-zig") {
+                compiler = "zig";
+            }
+
+            else if (arg == "-std=c++98" || arg == "-std=c++11" || arg == "-std=c++14" ||
+                     arg == "-std=c++17" || arg == "-std=c++20" || arg == "-std=c++23" ||
+                     arg == "-std=c++26") {
                 version = std::string(arg).substr(1);
-            } else if (arg.rfind("-o", 0) == 0) {
+            }
+
+            else if (arg.rfind("-o", 0) == 0) {
                 std::string n_output = std::string(arg).substr(2);
                 if (n_output.empty()) {
                     hp::printlnCl("Error: Output file not specifie after '-o'.", hp::Color::RED);
@@ -141,7 +145,6 @@ int main(int argc, char *argv[]) {
                     exit(EXIT_FAILURE);
                 }
                 flags += " -I" + includeFlag;
-
             } else if (arg.rfind("-L", 0) == 0) {
                 std::string n_lib = std::string(arg).substr(2);
                 if (n_lib.empty()) {
@@ -149,13 +152,17 @@ int main(int argc, char *argv[]) {
                     exit(EXIT_FAILURE);
                 }
                 flags += " -l" + n_lib;
+            } else if (arg.rfind("--verbose", 0) == 0) {
+                verbose = true;
             } else {
                 hp::printlnCl("Error: Unknown argument: " + std::string(arg), hp::Color::RED);
                 exit(EXIT_FAILURE);
             }
         }
-        Parser parser("HelpMake.txt", inputFile, compiler, version, output, flags);
+        Parser parser("HelpMake.txt", inputFile, compiler, version, output, flags, verbose);
         parser.parse();
         parser.execute();
+    } else {
+        hp::printlnCl("Error: Invalid command, use \"--help\" for the avaible commands", hp::RED);
     }
 }
