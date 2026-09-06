@@ -1,7 +1,0 @@
-Compiler: gcc
-Version: std=c++26
-Output: ff.exe
-InputFiles {
-src/test.cpp
-}
-Flags: -Iinclude -lstdc++exp
