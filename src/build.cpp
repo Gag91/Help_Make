@@ -140,6 +140,13 @@ int main(int argc, char *argv[]) {
                 }
                 flags += " -I" + includeFlag;
 
+            } else if (arg.rfind("-L", 0) == 0) {
+                std::string n_lib = std::string(arg).substr(2);
+                if (n_lib.empty()) {
+                    hp::printlnCl("Error: Include libraries flags not specified after '-L'.", hp::Color::RED);
+                    exit(EXIT_FAILURE);
+                }
+                flags += " -l" + n_lib;
             } else {
                 hp::printlnCl("Error: Unknown argument: " + std::string(arg), hp::Color::RED);
                 exit(EXIT_FAILURE);
