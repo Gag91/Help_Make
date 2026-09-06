@@ -80,27 +80,27 @@ int main(int argc, char *argv[]) {
     std::string inputFile = "";
     bool verbose = false;
     Build build;
+
     if (argc < 2) {
         build.help();
+        return 0;
     }
+
     std::string_view argument = argv[1];
 
     if (argument == "--help" || argument == "-h") {
         build.help();
-    }
-
-    else if (argument == "--version" || argument == "-v") {
+        return 0;
+    } else if (argument == "--version" || argument == "-v") {
         build.version();
-    }
-
-    else if (argument == "--license" || argument == "-l") {
+        return 0;
+    } else if (argument == "--license" || argument == "-l") {
         build.license(hp::EXTENDED);
-    }
-
-    else if (argument == "--build" || argument == "-b") {
-
+        return 0;
+    } else if (argument == "--build" || argument == "-b") {
         for (int i = 2; i < argc; i++) {
             std::string_view arg = argv[i];
+
             if (arg == "-Gcc" || arg == "-gcc") {
                 compiler = "gcc";
             } else if (arg == "-Clang" || arg == "-clang") {
@@ -109,60 +109,94 @@ int main(int argc, char *argv[]) {
                 compiler = "msvc";
             } else if (arg == "-Zig" || arg == "-zig") {
                 compiler = "zig";
-            }
-
-            else if (arg == "-std=c++98" || arg == "-std=c++11" || arg == "-std=c++14" ||
-                     arg == "-std=c++17" || arg == "-std=c++20" || arg == "-std=c++23" ||
-                     arg == "-std=c++26") {
+            } else if (arg == "-std=c++98" || arg == "-std=c++11" || arg == "-std=c++14" ||
+                       arg == "-std=c++17" || arg == "-std=c++20" || arg == "-std=c++23" ||
+                       arg == "-std=c++26") {
                 version = std::string(arg).substr(1);
-            }
-
-            else if (arg.rfind("-o", 0) == 0) {
-                std::string n_output = std::string(arg).substr(2);
-                if (n_output.empty()) {
-                    hp::printlnCl("Error: Output file not specifie after '-o'.", hp::Color::RED);
+            } else if (arg == "-o" || arg == "--output") {
+                if (i + 1 < argc && argv[i + 1][0] != '-') {
+                    output = argv[++i];
+                } else {
+                    hp::printlnCl("Error: Output file not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
                 }
-                output = n_output;
-            } else if (arg.rfind("-F", 0) == 0) {
+            } else if (arg.rfind("-o", 0) == 0 && arg.size() > 2) {
+                output = std::string(arg).substr(2);
+            } else if (arg == "-F" || arg == "--Flag") {
+                if (i + 1 < argc && argv[i + 1][0] != '-') {
+                    if (!flags.empty())
+                        flags += " ";
+                    flags += argv[++i];
+                } else {
+                    hp::printlnCl("Error: Additional flags not specified after '" + std::string(arg) + "'.", hp::Color::RED);
+                    exit(EXIT_FAILURE);
+                }
+            } else if (arg.rfind("-F", 0) == 0 && arg.size() > 2) {
                 std::string n_flags = std::string(arg).substr(2);
-                if (n_flags.empty()) {
-                    hp::printlnCl("Error: Additional flags not specified after '-F'.", hp::Color::RED);
+                if (!flags.empty())
+                    flags += " ";
+                flags += n_flags;
+            } else if (arg == "-I" || arg == "--Include") {
+                if (i + 1 < argc && argv[i + 1][0] != '-') {
+                    if (!flags.empty())
+                        flags += " ";
+                    flags += "-I" + std::string(argv[++i]);
+                } else {
+                    hp::printlnCl("Error: Include path not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
                 }
-                flags += " " + n_flags;
+            } else if (arg.rfind("-I", 0) == 0 && arg.size() > 2) {
+                std::string includePath = std::string(arg).substr(2);
+                if (!flags.empty())
+                    flags += " ";
+                flags += "-I" + includePath;
+            } else if (arg == "-L" || arg == "--Library") {
+                if (i + 1 < argc && argv[i + 1][0] != '-') {
+                    if (!flags.empty())
+                        flags += " ";
+                    flags += "-L" + std::string(argv[++i]);
+                } else {
+                    hp::printlnCl("Error: Library path not specified after '" + std::string(arg) + "'.", hp::Color::RED);
+                    exit(EXIT_FAILURE);
+                }
+            } else if (arg.rfind("-L", 0) == 0 && arg.size() > 2) {
+                std::string libPath = std::string(arg).substr(2);
+                if (!flags.empty())
+                    flags += " ";
+                flags += "-L" + libPath;
+            } else if (arg == "-v" || arg == "--verbose") {
+                verbose = true;
             } else if (arg.rfind("-", 0) != 0) {
                 std::string n_inputFile = std::string(arg);
-                if (n_inputFile.empty()) {
-                    hp::printlnCl("Error: Input files not specified after '-'.", hp::Color::RED);
-                    exit(EXIT_FAILURE);
-                }
-                inputFile += " " + n_inputFile;
-            } else if ((arg.rfind("-I", 0) == 0) || (arg.rfind("--include", 0) == 0)) {
-                std::string includeFlag = std::string(arg).substr(2);
-                if (includeFlag.empty()) {
-                    hp::printlnCl("Error: Include path not specified after '-I'.", hp::Color::RED);
-                    exit(EXIT_FAILURE);
-                }
-                flags += " -I" + includeFlag;
-            } else if (arg.rfind("-L", 0) == 0) {
-                std::string n_lib = std::string(arg).substr(2);
-                if (n_lib.empty()) {
-                    hp::printlnCl("Error: Include libraries flags not specified after '-L'.", hp::Color::RED);
-                    exit(EXIT_FAILURE);
-                }
-                flags += " -l" + n_lib;
-            } else if (arg.rfind("--verbose", 0) == 0) {
-                verbose = true;
+                if (!inputFile.empty())
+                    inputFile += " ";
+                inputFile += n_inputFile;
             } else {
                 hp::printlnCl("Error: Unknown argument: " + std::string(arg), hp::Color::RED);
                 exit(EXIT_FAILURE);
             }
         }
+
+        if (compiler.empty()) {
+            hp::printlnCl("Error: No compiler specified. Use -Gcc, -Clang, -MSVC, or -Zig.", hp::Color::RED);
+            exit(EXIT_FAILURE);
+        }
+
+        if (inputFile.empty()) {
+            hp::printlnCl("Error: No input files specified.", hp::Color::RED);
+            exit(EXIT_FAILURE);
+        }
+
+        if (output.empty()) {
+            hp::printlnCl("Warning: No output file specified. Using default: a.exe", hp::Color::YELLOW);
+            output = "a.exe";
+        }
         Parser parser("HelpMake.txt", inputFile, compiler, version, output, flags, verbose);
         parser.parse();
         parser.execute();
     } else {
-        hp::printlnCl("Error: Invalid command, use \"--help\" for the avaible commands", hp::RED);
+        hp::printlnCl("Error: Invalid command. Use \"--help\" for available commands.", hp::Color::RED);
     }
+
+    return 0;
 }
