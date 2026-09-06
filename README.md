@@ -60,28 +60,28 @@ hm --license
 ## Command line option | See hm --help
 
 ### Options:
-  -h, --help     Output this help message
-  -v, --version  Output the program version
-  -b, --build    Build HelpMake.txt
-  -l, --license  Output the license information
+ - -h, --help     Output this help message
+ - -v, --version  Output the program version
+ - -b, --build    Build HelpMake.txt
+ - -l, --license  Output the license information
 
 ### Avaible Compilers:
-  -Gcc   - GNU Compiler Collection
-  -Clang - LLVM Compiler
-  -MSVC  - Microsoft Visual C++ Compiler
+ - -Gcc   - GNU Compiler Collection
+ - -Clang - LLVM Compiler
+ - -MSVC  - Microsoft Visual C++ Compiler
 
 ### Avaible Flags:
-  -I<path>     Include a specified directory
-  -F<flags>    Add specified flags
-  -L<library>  include a specified library
+ - -I<path>     Include a specified directory
+ - -F<flags>    Add specified flags
+ - -L<library>  include a specified library
 ### Avaible Versions:
-  -std=c++98
-  -std=c++11
-  -std=c++14
-  -std=c++17
-  -std=c++20
-  -std=c++23
-  -std=c++26
+ - -std=c++98
+ - -std=c++11
+ - -std=c++14
+ - -std=c++17
+ - -std=c++20
+ - -std=c++23
+ - -std=c++26
 
 ## Installation
 ```bash
