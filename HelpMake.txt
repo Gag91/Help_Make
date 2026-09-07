@@ -1,0 +1,10 @@
+Compiler: gcc
+InputFiles {
+    src/*.cpp
+}
+Output: hmm.exe
+Version: std=c++26
+Includes {
+    include
+    include/hp
+}

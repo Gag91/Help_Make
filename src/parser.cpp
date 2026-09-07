@@ -61,7 +61,7 @@ void Parser::parse() {
                 exit(EXIT_FAILURE);
             } else if (compiler != "gcc" && compiler != "clang" && compiler != "msvc" && compiler != "zig") {
                 hp::printlnCl("Error: Unsupported compiler specified: " + compiler, hp::Color::RED);
-                hp::printlnCl("Supported compilers are: gcc, clang, msvc.", hp::Color::YELLOW);
+                hp::printlnCl("Supported compilers are: gcc, clang, msvc and zig.", hp::Color::YELLOW);
                 exit(EXIT_FAILURE);
             }
 
@@ -92,14 +92,15 @@ void Parser::parse() {
             std::string value = line.substr(pos + 7);
             value.erase(0, value.find_first_not_of(" \t"));
             value.erase(value.find_last_not_of(" \t") + 1);
-            output = value;
+            if (output.empty())
+                output = value;
 
             if (output.empty()) {
                 hp::printlnCl("Output not specified in the file. Using default: a.exe", hp::Color::YELLOW);
                 output = "a.exe";
             }
             if (verbose)
-                std::cout << "Founded Output: " << output << "\n";
+                std::cout << "Founded Output: '" << output << "' \n";
         } else if (line.find("InputFiles {") != std::string::npos) {
             isInputFileSet = true;
             continue;
@@ -112,7 +113,25 @@ void Parser::parse() {
                 std::string value = line.substr(pos);
                 value.erase(value.find_last_not_of(" \t") + 1);
                 inputFile += value;
-                std::cout << "Founded Input Files: '" << inputFile << "'" << std::endl;
+                if (verbose)
+                    std::cout << "Founded Input Files: '" << inputFile << "'" << std::endl;
+            }
+        } else if (line.find("Includes {") != std::string::npos) {
+            isIncludeSet = true;
+            continue;
+        } else if (line.find("}") != std::string::npos && isIncludeSet) {
+            isIncludeSet = false;
+            if (verbose) {
+                std::cout << "Founded Include Files: \n";
+                hp::printlnAll(includeFiles);
+            }
+        } else if (isIncludeSet) {
+            std::size_t pos = line.find_first_not_of(" \t");
+            if (pos != std::string::npos) {
+                std::string value = line.substr(pos);
+                value.erase(value.find_last_not_of(" \t") + 1);
+                flags += " -I" + value;
+                includeFiles.push_back(value);
             }
         } else if (line.find("Flags:") != std::string::npos) {
             size_t pos = line.find("Flags:");
