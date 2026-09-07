@@ -1,6 +1,7 @@
 #include "parser.hpp"
 #include "hp/help.hpp"
 #include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 
@@ -125,6 +126,7 @@ void Parser::parse() {
                 std::cout << "Founded Include Files: \n";
                 hp::printlnAll(includeFiles);
             }
+            continue;
         } else if (isIncludeSet) {
             std::size_t pos = line.find_first_not_of(" \t");
             if (pos != std::string::npos) {
@@ -141,6 +143,51 @@ void Parser::parse() {
             flags += " " + value;
             if (verbose)
                 std::cout << "Founded Flags: '" << flags << "'" << std::endl;
+        } else if (line.find("Github {") != std::string::npos) {
+            isGithubSet = true;
+            continue;
+        } else if (line.find("}") != std::string::npos && isGithubSet) {
+            isGithubSet = false;
+        } else if (isGithubSet) {
+            std::size_t pos = line.find_first_not_of(" \t");
+            if (pos != std::string::npos) {
+                std::string value = line.substr(pos);
+                value.erase(value.find_last_not_of(" \t") + 1);
+                std::size_t arrow = value.find("->");
+                std::string url = value.substr(0, arrow);
+                std::string folder = value.substr(arrow + 2);
+
+                url.erase(url.find_last_not_of(" \t\r\n") + 1);
+                folder.erase(0, folder.find_first_not_of(" \t\r\n"));
+                folder.erase(folder.find_last_not_of(" \t\r\n") + 1);
+                std::string test = hp::command("where git");
+                if (test == "INFO: Could not find files for the given pattern(s).") {
+                    hp::printlnCl("Error: Git system not found. Please ensure Git is installed and added to the system PATH.\n", hp::Color::RED);
+                    exit(EXIT_FAILURE);
+                }
+                hp::Folder f;
+                if (!f.exists("build/HelpMake/dep")) {
+                    f.create("build/HelpMake/dep");
+                }
+                if (verbose)
+                    std::cout << "[Help_Make] Downloading dependecies '" << url << "' ...\n";
+                std::size_t slash = url.find_last_of("/");
+                std::string include = url.substr(slash + 1);
+                include.erase(include.find_last_not_of(" \t\r\n") + 1);
+                if (include.size() > 4 && include.substr(include.size() - 4) == ".git") {
+                    include.erase(include.size() - 4);
+                }
+                std::string cmd = hp::command("git clone " + url + " build/HelpMake/dep/" + include);
+                std::string full_path = "build/HelpMake/dep/" + include;
+                if (folder != "." && !folder.empty()) {
+                    full_path += "/" + folder;
+                }
+                flags += " -I\"" + full_path + "\"";
+                if (debug) {
+                    hp::printlnCl("[Debug] Github Folder include of " + value + ": " + folder, hp::YELLOW);
+                    hp::printlnCl("[Debug] Github clone Folder of " + value + ": " + include, hp::YELLOW);
+                }
+            }
         }
     }
 
@@ -197,7 +244,7 @@ void Parser::execute() {
                 hp::printlnCl("Error: Zig compiler not found. Please ensure Zig is installed and added to the system PATH.\n", hp::Color::RED);
             }
         } else {
-            hp::printlnCl(result, hp::RED);
+            std::cout << result << "\n";
             hp::printlnCl("Compilation Failed", hp::RED);
         }
         exit(EXIT_FAILURE);

@@ -15,13 +15,15 @@ class Parser {
 
     bool isInputFileSet = false;
     bool isIncludeSet = false;
+    bool isGithubSet = false;
     bool verbose = false;
+    bool debug = false;
     bool run = false;
 
     std::vector<std::string> includeFiles;
 
   public:
-    Parser(std::filesystem::path file, std::string inputFile, std::string comp, std::string ver, std::string out, std::string flg, bool verbose, bool run) : filename(file), inputFile(inputFile), compiler(comp), version(ver), output(out), flags(flg), verbose(verbose), run(run) {}
+    Parser(std::filesystem::path file, std::string inputFile, std::string comp, std::string ver, std::string out, std::string flg, bool verbose, bool run, bool debug) : filename(file), inputFile(inputFile), compiler(comp), version(ver), output(out), flags(flg), verbose(verbose), run(run), debug(debug) {}
 
     void parse();
     void execute();

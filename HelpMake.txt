@@ -4,7 +4,7 @@ InputFiles {
 }
 Output: hmm.exe
 Version: std=c++26
-Includes {
-    include
-    include/hp
+
+Github {
+    https://github.com/Gag91/Help_Library.git -> .
 }

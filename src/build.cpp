@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
     std::string filename = "HelpMake.txt";
     bool verbose = false;
     bool run = false;
+    bool debug = false;
     Build build;
 
     if (argc < 2) {
@@ -171,6 +172,8 @@ int main(int argc, char *argv[]) {
                 verbose = true;
             } else if (arg == "-r" || arg == "--run") {
                 run = true;
+            } else if (arg == "--debug") {
+                debug = true;
             } else if (arg.rfind("/", 0) == 0 || arg.rfind(".", 0) != 0) {
                 std::string path = std::string(arg);
 
@@ -201,7 +204,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (std::filesystem::exists(filename)) {
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug);
             parser.parse();
             parser.execute();
         } else {
@@ -223,7 +226,7 @@ int main(int argc, char *argv[]) {
                 output = "a.exe";
             }
 
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug);
             parser.parse();
             parser.execute();
         }
