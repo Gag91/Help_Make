@@ -10,36 +10,14 @@ void Parser::parse() {
         std::cout << "Trying to open file : " << filename.string() << std::endl;
 
     std::fstream file(filename);
-    if (!file.is_open() || n_file) {
-        bool cmdInfo = !compiler.empty() && !output.empty() && !inputFile.empty();
-        if (cmdInfo) {
-            if (version.empty()) {
-                version = "std=c++20";
-                hp::printlnCl("No version specified, using default: C++20", hp::YELLOW);
-            }
-            if (verbose) {
-                std::cout << "Compiler:    " << hp::getColorCode(hp::YELLOW) << compiler << "\n"
-                          << hp::getColorCode(hp::RESET);
-                std::cout << "Version:     " << hp::getColorCode(hp::YELLOW) << version << "\n"
-                          << hp::getColorCode(hp::RESET);
-                std::cout << "Input Files:" << hp::getColorCode(hp::YELLOW) << inputFile << "\n"
-                          << hp::getColorCode(hp::RESET);
-                std::cout << "Output:      " << hp::getColorCode(hp::YELLOW) << output << "\n"
-                          << hp::getColorCode(hp::RESET);
-                std::cout << "Flags:      " << hp::getColorCode(hp::YELLOW) << flags << "\n"
-                          << hp::getColorCode(hp::RESET);
-            }
-            execute();
-            hp::exit();
-            return;
-        }
-        if (!n_file) {
-            hp::printlnCl("Error: Could not open file: " + filename.string() + "\n", hp::Color::RED);
-            hp::printlnCl("Make sure the file exists in the current directory.", hp::Color::YELLOW);
-            hp::printlnCl("Or provide all required arguments on the command line", hp::Color::YELLOW);
-        } else {
-            hp::printlnCl("Error: Please provide all required arguments on the command line", hp::RED);
-        }
+    if (n_file) {
+        Parser::buildCommand();
+        return;
+    }
+    if (!file.is_open()) {
+        hp::printlnCl("Error: Could not open file: " + filename.string() + "\n", hp::Color::RED);
+        hp::printlnCl("Make sure the file exists in the current directory.", hp::Color::YELLOW);
+        hp::printlnCl("Or provide all required arguments on the command line", hp::Color::YELLOW);
         exit(EXIT_FAILURE);
     }
 
@@ -255,4 +233,36 @@ void Parser::execute() {
         }
         exit(EXIT_FAILURE);
     }
+}
+
+void Parser::buildCommand() {
+    if (compiler.empty()) {
+        hp::printlnCl("Error: No compiler specified.", hp::Color::RED);
+        exit(EXIT_FAILURE);
+    }
+    if (inputFile.empty()) {
+        hp::printlnCl("Error: No input files specified.", hp::Color::RED);
+        exit(EXIT_FAILURE);
+    }
+    if (output.empty()) {
+        hp::printlnCl("Warning: No output specified. Using a.exe", hp::Color::YELLOW);
+        output = "a.exe";
+    }
+    if (version.empty()) {
+        version = "std=c++20";
+        hp::printlnCl("No version specified, using default: C++20", hp::YELLOW);
+    }
+    if (verbose) {
+        std::cout << "Compiler:    " << hp::getColorCode(hp::YELLOW) << compiler << "\n"
+                  << hp::getColorCode(hp::RESET);
+        std::cout << "Version:     " << hp::getColorCode(hp::YELLOW) << version << "\n"
+                  << hp::getColorCode(hp::RESET);
+        std::cout << "Input Files:" << hp::getColorCode(hp::YELLOW) << inputFile << "\n"
+                  << hp::getColorCode(hp::RESET);
+        std::cout << "Output:      " << hp::getColorCode(hp::YELLOW) << output << "\n"
+                  << hp::getColorCode(hp::RESET);
+        std::cout << "Flags:      " << hp::getColorCode(hp::YELLOW) << flags << "\n"
+                  << hp::getColorCode(hp::RESET);
+    }
+    execute();
 }

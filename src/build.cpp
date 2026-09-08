@@ -199,14 +199,14 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (!std::filesystem::exists(filename)) {
+        if (!std::filesystem::exists(filename) && !n_file) {
             if (filename != "HelpMake.txt" && std::filesystem::exists("HelpMake.txt")) {
                 hp::printlnCl("Build file not found. Using default HelpMake.txt", hp::Color::YELLOW);
                 filename = "HelpMake.txt";
             }
         }
 
-        if (std::filesystem::exists(filename)) {
+        if (std::filesystem::exists(filename) && !n_file) {
             Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file);
             parser.parse();
             parser.execute();

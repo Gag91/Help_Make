@@ -31,4 +31,5 @@ class Parser {
 
     void parse();
     void execute();
+    void buildCommand();
 };
