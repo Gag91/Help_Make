@@ -6,7 +6,7 @@
 #include <iostream>
 
 void Parser::parse() {
-    if (!n_file)
+    if (!n_file && verbose)
         std::cout << "Trying to open file : " << filename.string() << std::endl;
 
     std::fstream file(filename);
@@ -231,7 +231,8 @@ void Parser::execute() {
         exit(EXIT_FAILURE);
     }
     std::string command = comp + " -" + version + " " + inputFile + " -o " + output + " " + flags + (run ? " && " + output : "");
-    std::cout << "\nCommand: " << command << "\n";
+    if (verbose)
+        std::cout << "\nCommand: " << command << "\n";
     std::string result = hp::command(command);
     if (result.empty()) {
         hp::printlnCl("Compilation successful. Output file: " + output, hp::Color::GREEN);
