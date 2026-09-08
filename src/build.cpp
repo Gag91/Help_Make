@@ -177,18 +177,18 @@ int main(int argc, char *argv[]) {
                 debug = true;
             } else if (arg == "--nofile") {
                 n_file = true;
-            } else if (arg.rfind("/", 0) == 0 || arg.rfind(".", 0) != 0) {
-                std::string path = std::string(arg);
-
-                if (!path.empty() && (path.back() == '/' || path.back() == '\\')) {
-                    filename = path + "HelpMake.txt";
-                } else if (path.find('.') != std::string::npos) {
-                    filename = path;
-                } else if (std::filesystem::is_directory(path)) {
-                    filename = path + "/HelpMake.txt";
-                } else {
-                    inputFile += " " + path;
-                }
+            } else if (!arg.empty() && (arg.back() == '/' || arg.back() == '\\')) {
+                filename = std::string(arg) + "HelpMake.txt";
+                if (verbose)
+                    std::cout << "Build file: " << filename << std::endl;
+            } else if (arg.find(".txt") != std::string::npos && std::filesystem::is_regular_file(arg)) {
+                filename = std::string(arg);
+                if (verbose)
+                    std::cout << "Build file: " << filename << std::endl;
+            } else if (std::filesystem::is_directory(arg)) {
+                filename = std::string(arg) + "/HelpMake.txt";
+                if (verbose)
+                    std::cout << "Build file: " << filename << std::endl;
             } else if (arg.rfind("-", 0) != 0) {
                 if (!inputFile.empty())
                     inputFile += " ";
@@ -211,8 +211,11 @@ int main(int argc, char *argv[]) {
             parser.parse();
             parser.execute();
         } else {
-            hp::printlnCl("Build file not found: " + filename, hp::Color::YELLOW);
-            hp::printlnCl("Building from command-line arguments only", hp::Color::CYAN);
+            if (!n_file) {
+                hp::printlnCl("Build file not found: " + filename, hp::Color::YELLOW);
+            }
+            if (verbose)
+                hp::printlnCl("Building from command-line arguments only\n", hp::Color::CYAN);
 
             if (compiler.empty()) {
                 hp::printlnCl("Error: No compiler specified. Use -Gcc, -Clang, -MSVC, or -Zig.", hp::Color::RED);

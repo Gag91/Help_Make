@@ -9,11 +9,11 @@ void Parser::parse() {
     if (!n_file && verbose)
         std::cout << "Trying to open file : " << filename.string() << std::endl;
 
-    std::fstream file(filename);
     if (n_file) {
         Parser::buildCommand();
         return;
     }
+    std::fstream file(filename);
     if (!file.is_open()) {
         hp::printlnCl("Error: Could not open file: " + filename.string() + "\n", hp::Color::RED);
         hp::printlnCl("Make sure the file exists in the current directory.", hp::Color::YELLOW);
@@ -257,7 +257,7 @@ void Parser::buildCommand() {
                   << hp::getColorCode(hp::RESET);
         std::cout << "Version:     " << hp::getColorCode(hp::YELLOW) << version << "\n"
                   << hp::getColorCode(hp::RESET);
-        std::cout << "Input Files:" << hp::getColorCode(hp::YELLOW) << inputFile << "\n"
+        std::cout << "Input Files: " << hp::getColorCode(hp::YELLOW) << inputFile << "\n"
                   << hp::getColorCode(hp::RESET);
         std::cout << "Output:      " << hp::getColorCode(hp::YELLOW) << output << "\n"
                   << hp::getColorCode(hp::RESET);
@@ -265,4 +265,5 @@ void Parser::buildCommand() {
                   << hp::getColorCode(hp::RESET);
     }
     execute();
+    hp::exit();
 }
