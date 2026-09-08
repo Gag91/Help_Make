@@ -6,10 +6,11 @@
 #include <iostream>
 
 void Parser::parse() {
-    std::cout << "Trying to open file : " << filename.string() << std::endl;
+    if (!n_file)
+        std::cout << "Trying to open file : " << filename.string() << std::endl;
 
     std::fstream file(filename);
-    if (!file.is_open()) {
+    if (!file.is_open() || n_file) {
         bool cmdInfo = !compiler.empty() && !output.empty() && !inputFile.empty();
         if (cmdInfo) {
             if (version.empty()) {
@@ -32,9 +33,13 @@ void Parser::parse() {
             hp::exit();
             return;
         }
-        hp::printlnCl("Error: Could not open file: " + filename.string() + "\n", hp::Color::RED);
-        hp::printlnCl("Make sure the file exists in the current directory.", hp::Color::YELLOW);
-        hp::printlnCl("Or provide all required arguments on the command line:", hp::Color::YELLOW);
+        if (!n_file) {
+            hp::printlnCl("Error: Could not open file: " + filename.string() + "\n", hp::Color::RED);
+            hp::printlnCl("Make sure the file exists in the current directory.", hp::Color::YELLOW);
+            hp::printlnCl("Or provide all required arguments on the command line", hp::Color::YELLOW);
+        } else {
+            hp::printlnCl("Error: Please provide all required arguments on the command line", hp::RED);
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -182,10 +187,10 @@ void Parser::parse() {
                 if (folder != "." && !folder.empty()) {
                     full_path += "/" + folder;
                 }
-                flags += " -I\"" + full_path + "\"";
+                flags += " -I" + full_path;
                 if (debug) {
-                    hp::printlnCl("[Debug] Github Folder include of " + value + ": " + folder, hp::YELLOW);
-                    hp::printlnCl("[Debug] Github clone Folder of " + value + ": " + include, hp::YELLOW);
+                    hp::printlnCl("[Debug] Github Folder include of " + value.substr(0, value.size() - 5) + ": '" + folder + "'", hp::YELLOW);
+                    hp::printlnCl("[Debug] Github Clone  Folder  of " + value.substr(0, value.size() - 5) + ": '" + include + "'", hp::YELLOW);
                 }
             }
         }

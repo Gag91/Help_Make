@@ -83,6 +83,7 @@ int main(int argc, char *argv[]) {
     bool verbose = false;
     bool run = false;
     bool debug = false;
+    bool n_file = false;
     Build build;
 
     if (argc < 2) {
@@ -174,6 +175,8 @@ int main(int argc, char *argv[]) {
                 run = true;
             } else if (arg == "--debug") {
                 debug = true;
+            } else if (arg == "--nofile") {
+                n_file = true;
             } else if (arg.rfind("/", 0) == 0 || arg.rfind(".", 0) != 0) {
                 std::string path = std::string(arg);
 
@@ -204,7 +207,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (std::filesystem::exists(filename)) {
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file);
             parser.parse();
             parser.execute();
         } else {
@@ -226,7 +229,7 @@ int main(int argc, char *argv[]) {
                 output = "a.exe";
             }
 
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file);
             parser.parse();
             parser.execute();
         }
