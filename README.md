@@ -23,6 +23,14 @@ InputFiles {
     main.cpp
     src/file.cpp
 }
+Includes {
+    include
+    include/hp
+    backends/glfw
+}
+Github {
+    https://github.com/name/repo-name -> include/folder
+}
 Flags: -Wall
 ```
 2. Build your project:
@@ -82,6 +90,9 @@ hm --license
  - -std=c++20
  - -std=c++23
  - -std=c++26
+ ### Other
+ - --verbose    Make building more verbose
+ - --debug      Enable debug mode
 
 ## Installation
 ```bash
