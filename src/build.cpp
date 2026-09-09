@@ -84,6 +84,7 @@ int main(int argc, char *argv[]) {
     bool run = false;
     bool debug = false;
     bool n_file = false;
+    bool sere = false;
     Build build;
 
     if (argc < 2) {
@@ -114,6 +115,9 @@ int main(int argc, char *argv[]) {
                 compiler = "msvc";
             } else if (arg == "-Zig" || arg == "-zig") {
                 compiler = "zig";
+            } else if (arg == "-sere" || arg == "-Sere") {
+                compiler = "sere";
+                sere = true;
             } else if (arg == "-std=c++98" || arg == "-std=c++11" || arg == "-std=c++14" ||
                        arg == "-std=c++17" || arg == "-std=c++20" || arg == "-std=c++23" ||
                        arg == "-std=c++26") {
@@ -207,7 +211,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (std::filesystem::exists(filename) && !n_file) {
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere);
             parser.parse();
             parser.execute();
         } else {
@@ -218,7 +222,7 @@ int main(int argc, char *argv[]) {
                 hp::printlnCl("Building from command-line arguments only\n", hp::Color::CYAN);
 
             if (compiler.empty()) {
-                hp::printlnCl("Error: No compiler specified. Use -Gcc, -Clang, -MSVC, or -Zig.", hp::Color::RED);
+                hp::printlnCl("Error: No compiler specified. Use -Gcc, -Clang, -MSVC, -Zig or Sere.", hp::Color::RED);
                 exit(EXIT_FAILURE);
             }
 
@@ -232,7 +236,7 @@ int main(int argc, char *argv[]) {
                 output = "a.exe";
             }
 
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere);
             parser.parse();
             parser.execute();
         }

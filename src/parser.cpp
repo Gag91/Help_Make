@@ -6,6 +6,10 @@
 #include <iostream>
 
 void Parser::parse() {
+    if (buildSere || compiler == "sere") {
+        execute();
+        return;
+    }
     if (!n_file && verbose)
         std::cout << "Trying to open file : " << filename.string() << std::endl;
 
@@ -43,9 +47,9 @@ void Parser::parse() {
             if (compiler.empty()) {
                 hp::printlnCl("Error: Compiler not specified in the file.", hp::Color::RED);
                 exit(EXIT_FAILURE);
-            } else if (compiler != "gcc" && compiler != "clang" && compiler != "msvc" && compiler != "zig") {
+            } else if (compiler != "gcc" && compiler != "clang" && compiler != "msvc" && compiler != "zig" && compiler != "sere") {
                 hp::printlnCl("Error: Unsupported compiler specified: " + compiler, hp::Color::RED);
-                hp::printlnCl("Supported compilers are: gcc, clang, msvc and zig.", hp::Color::YELLOW);
+                hp::printlnCl("Supported compilers are: gcc, clang, msvc, zig and sere.", hp::Color::YELLOW);
                 exit(EXIT_FAILURE);
             }
 
@@ -204,11 +208,18 @@ void Parser::execute() {
         comp = "cl";
     } else if (compiler == "zig") {
         comp = "zig c++";
+    } else if (compiler == "sere") {
+        comp = "sere";
     } else {
         hp::printlnCl("Error: Unsupported compiler specified.", hp::Color::RED);
         exit(EXIT_FAILURE);
     }
-    std::string command = comp + " -" + version + " " + inputFile + " -o " + output + " " + flags + (run ? " && " + output : "");
+    std::string command;
+    if (compiler != "sere") {
+        command = comp + " -" + version + " " + inputFile + " -o " + output + " " + flags + (run ? " && " + output : "");
+    } else {
+        command = comp + " " + inputFile + " -o" + output + (run ? " && " + output : "");
+    }
     if (verbose)
         std::cout << "\nCommand: " << command << "\n";
     std::string result = hp::command(command);
@@ -226,6 +237,8 @@ void Parser::execute() {
                 hp::printlnCl("Error: MSVC compiler not found. Please ensure MSVC is installed and added to the system PATH.\n", hp::Color::RED);
             } else if (compiler == "zig") {
                 hp::printlnCl("Error: Zig compiler not found. Please ensure Zig is installed and added to the system PATH.\n", hp::Color::RED);
+            } else if (compiler == "sere") {
+                hp::printlnCl("Error: Sere compiler not found. Please ensure Sere is installed and added to the system PATH.\n", hp::Color::RED);
             }
         } else {
             std::cout << result << "\n";
@@ -249,8 +262,10 @@ void Parser::buildCommand() {
         output = "a.exe";
     }
     if (version.empty()) {
-        version = "std=c++20";
-        hp::printlnCl("No version specified, using default: C++20", hp::YELLOW);
+        if (compiler != "sere") {
+            version = "std=c++20";
+            hp::printlnCl("No version specified, using default: C++20", hp::YELLOW);
+        }
     }
     if (verbose) {
         std::cout << "Compiler:    " << hp::getColorCode(hp::YELLOW) << compiler << "\n"
