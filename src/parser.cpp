@@ -218,7 +218,7 @@ void Parser::execute() {
     if (compiler != "sere") {
         command = comp + " -" + version + " " + inputFile + " -o " + output + " " + flags + (run ? " && " + output : "");
     } else {
-        command = comp + " " + inputFile + " -o" + output + (run ? " && " + output : "");
+        command = comp + " " + inputFile + " -o " + output + (run ? " && " + output : "");
     }
     if (verbose)
         std::cout << "\nCommand: " << command << "\n";
