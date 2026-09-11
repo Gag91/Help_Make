@@ -39,7 +39,7 @@ class Build {
 
     void version() const {
         std::cout << "Help_Make (hm) - Build System\n";
-        std::cout << "Version: 1.1.0\n";
+        std::cout << "Version: 2.0.0\n";
         std::cout << "Author : Xavi99\n";
         std::cout << "Website: https://github.com/Xavi99/Help_Make\n";
         std::cout << "This program is licensed under the MIT License. See \"--license\" for details.\n\n";

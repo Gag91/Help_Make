@@ -76,7 +76,7 @@ void Parser::parse() {
             if (verbose)
                 std::cout << "Founded Version: '" << version << "'" << std::endl;
         } else if (line.find("Output:") != std::string::npos) {
-            size_t pos = line.find("Output:");
+            std::size_t pos = line.find("Output:");
             std::string value = line.substr(pos + 7);
             value.erase(0, value.find_first_not_of(" \t"));
             value.erase(value.find_last_not_of(" \t") + 1);
@@ -89,6 +89,17 @@ void Parser::parse() {
             }
             if (verbose)
                 std::cout << "Founded Output: '" << output << "' \n";
+        } else if (line.find("InputFiles:") != std::string::npos) {
+            std::size_t pos = line.find("InputFiles:");
+            std::string value = line.substr(pos + 11);
+            value.erase(0, value.find_first_not_of(" \t"));
+            value.erase(value.find_last_not_of(" \t") + 1);
+            if (inputFile.empty()) {
+                inputFile = value;
+            } else {
+                inputFile += " " + value;
+            }
+
         } else if (line.find("InputFiles {") != std::string::npos) {
             isInputFileSet = true;
             continue;
@@ -100,9 +111,19 @@ void Parser::parse() {
             if (pos != std::string::npos) {
                 std::string value = line.substr(pos);
                 value.erase(value.find_last_not_of(" \t") + 1);
-                inputFile += value;
+                inputFile += " " + value;
                 if (verbose)
                     std::cout << "Founded Input Files: '" << inputFile << "'" << std::endl;
+            }
+        } else if (line.find("Includes:") != std::string::npos) {
+            std::size_t pos = line.find("Includes:");
+            std::string value = line.substr(pos + 11);
+            value.erase(0, value.find_first_not_of(" \t"));
+            value.erase(value.find_last_not_of(" \t") + 1);
+            if (flags.empty()) {
+                flags = value;
+            } else {
+                flags += " " + value;
             }
         } else if (line.find("Includes {") != std::string::npos) {
             isIncludeSet = true;
@@ -122,6 +143,13 @@ void Parser::parse() {
                 flags += " -I" + value;
                 includeFiles.push_back(value);
             }
+        } else if (line.find("Flags {")) {
+            isFlagsSet = true;
+            continue;
+        } else if (line.find("}") != std::string::npos && isFlagsSet) {
+            isFlagsSet = false;
+        } else if (isFlagsSet) {
+            std::size_t pos = line.find_first_not_of(" \t");
         } else if (line.find("Flags:") != std::string::npos) {
             size_t pos = line.find("Flags:");
             std::string value = line.substr(pos + 6);
@@ -280,5 +308,5 @@ void Parser::buildCommand() {
                   << hp::getColorCode(hp::RESET);
     }
     execute();
-    hp::exit();
+    hp::exit(0);
 }
