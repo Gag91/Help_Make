@@ -365,7 +365,7 @@ void Parser::execute() {
             }
         } else {
             if (!cleanLog.empty()) {
-                std::cout << cleanLog << "\n";
+                std::cout << result << "\n";
             }
             hp::printlnCl("\nCompilation Failed", hp::RED);
             hp::printlnCl("See Logs: " + logPath, hp::Color::YELLOW);
