@@ -149,6 +149,17 @@ void Parser::parse() {
             isFlagsSet = false;
         } else if (isFlagsSet) {
             std::size_t pos = line.find_first_not_of(" \t");
+            if (pos != std::string::npos) {
+                std::string value = line.substr(pos);
+                value.erase(line.find_last_not_of(" \t") + 1);
+                if (flags.empty()) {
+                    flags = value;
+                } else {
+                    flags += " " + value;
+                }
+                if (verbose)
+                    std::cout << "Founded Flags: " << value << "\n";
+            }
         } else if (line.find("Flags:") != std::string::npos) {
             size_t pos = line.find("Flags:");
             std::string value = line.substr(pos + 6);
@@ -277,9 +288,9 @@ void Parser::execute() {
     }
     std::string command;
     if (compiler != "sere") {
-        command = comp + " -" + version + " " + inputFile + " -o " + output + " " + flags + (run ? " && " + output : "");
+        command = comp + " -" + version + " " + modules + " " + inputFile + " -o " + output + " " + flags + (run ? " && " + output : "");
     } else {
-        command = comp + " " + inputFile + " -o " + output + (run ? " && " + output : "");
+        command = comp + " " + modules + " " + inputFile + " -o " + output + (run ? " && " + output : "");
     }
     if (verbose)
         std::cout << "\nCommand: " << command << "\n";
