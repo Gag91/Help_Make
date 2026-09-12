@@ -26,6 +26,8 @@ class Parser {
     bool buildSere = false;
 
     std::vector<std::string> includeFiles;
+    std::vector<std::string> v_Flags;
+    std::vector<std::string> v_Modules;
 
   public:
     Parser(std::filesystem::path file, std::string inputFile, std::string comp, std::string ver,

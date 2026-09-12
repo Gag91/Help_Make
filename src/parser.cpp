@@ -142,7 +142,7 @@ void Parser::parse() {
                 flags += " -I" + value;
                 includeFiles.push_back(value);
             }
-        } else if (line.find("Flags {")) {
+        } else if (line.find("Flags {") != std::string::npos) {
             isFlagsSet = true;
             continue;
         } else if (line.find("}") != std::string::npos && isFlagsSet) {
@@ -151,7 +151,7 @@ void Parser::parse() {
             std::size_t pos = line.find_first_not_of(" \t");
             if (pos != std::string::npos) {
                 std::string value = line.substr(pos);
-                value.erase(line.find_last_not_of(" \t") + 1);
+                value.erase(value.find_last_not_of(" \t") + 1);
                 if (flags.empty()) {
                     flags = value;
                 } else {
@@ -216,8 +216,8 @@ void Parser::parse() {
         } else if (line.find("Modules:") != std::string::npos) {
             std::size_t pos = line.find("Modules:");
             std::string value = line.substr(pos + 7);
-            value.erase(0, line.find_first_not_of(" \t"));
-            value.erase(line.find_last_not_of(" \t") + 1);
+            value.erase(0, value.find_first_not_of(" \t"));
+            value.erase(value.find_last_not_of(" \t") + 1);
             if (modules.empty()) {
                 modules = value;
             } else {
@@ -236,7 +236,7 @@ void Parser::parse() {
             std::size_t pos = line.find_first_not_of(" \t");
             if (pos != std::string::npos) {
                 std::string value = line.substr(pos);
-                value.erase(line.find_last_not_of(" \t") + 1);
+                value.erase(value.find_last_not_of(" \t") + 1);
                 if (modules.empty()) {
                     modules = value;
                 } else {
