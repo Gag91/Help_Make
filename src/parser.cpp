@@ -147,6 +147,10 @@ void Parser::parse() {
             continue;
         } else if (line.find("}") != std::string::npos && isFlagsSet) {
             isFlagsSet = false;
+            if (verbose) {
+                std::cout << "Founded Flags:\n";
+                hp::printlnAll(v_Flags);
+            }
         } else if (isFlagsSet) {
             std::size_t pos = line.find_first_not_of(" \t");
             if (pos != std::string::npos) {
@@ -157,8 +161,7 @@ void Parser::parse() {
                 } else {
                     flags += " " + value;
                 }
-                if (verbose)
-                    std::cout << "Founded Flags: " << value << "\n";
+                v_Flags.push_back(value);
             }
         } else if (line.find("Flags:") != std::string::npos) {
             size_t pos = line.find("Flags:");
@@ -232,6 +235,15 @@ void Parser::parse() {
             continue;
         } else if (line.find("}") != std::string::npos && isModulesSet) {
             isModulesSet = false;
+            if (verbose) {
+                std::cout << "Founded Modules:\n";
+                hp::printlnAll(v_Modules);
+            }
+            if (debug) {
+                for (std::size_t i = 0; i < v_Modules.size(); i++) {
+                    hp::printlnCl("[Debug] Compiling Module: " + v_Modules[i], hp::YELLOW);
+                }
+            }
         } else if (isModulesSet) {
             std::size_t pos = line.find_first_not_of(" \t");
             if (pos != std::string::npos) {
@@ -242,10 +254,7 @@ void Parser::parse() {
                 } else {
                     modules += " " + value;
                 }
-                if (verbose)
-                    std::cout << "Founded Modules: " << value << "\n";
-                if (debug)
-                    hp::printlnCl("[Debug] Compiling Modules: " + value, hp::YELLOW);
+                v_Modules.push_back(value);
             }
         }
     }
