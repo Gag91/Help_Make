@@ -12,11 +12,13 @@ class Parser {
     std::string output;
     std::string flags;
     std::string inputFile;
+    std::string modules;
 
     bool isInputFileSet = false;
     bool isIncludeSet = false;
     bool isGithubSet = false;
     bool isFlagsSet = false;
+    bool isModulesSet = false;
     bool verbose = false;
     bool debug = false;
     bool run = false;

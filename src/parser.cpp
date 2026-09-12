@@ -134,7 +134,6 @@ void Parser::parse() {
                 std::cout << "Founded Include Files: \n";
                 hp::printlnAll(includeFiles);
             }
-            continue;
         } else if (isIncludeSet) {
             std::size_t pos = line.find_first_not_of(" \t");
             if (pos != std::string::npos) {
@@ -202,6 +201,40 @@ void Parser::parse() {
                     hp::printlnCl("[Debug] Github Folder include of " + value.substr(0, value.size() - 5) + ": '" + folder + "'", hp::YELLOW);
                     hp::printlnCl("[Debug] Github Clone  Folder  of " + value.substr(0, value.size() - 5) + ": '" + include + "'", hp::YELLOW);
                 }
+            }
+        } else if (line.find("Modules:") != std::string::npos) {
+            std::size_t pos = line.find("Modules:");
+            std::string value = line.substr(pos + 7);
+            value.erase(0, line.find_first_not_of(" \t"));
+            value.erase(line.find_last_not_of(" \t") + 1);
+            if (modules.empty()) {
+                modules = value;
+            } else {
+                modules += " " + value;
+            }
+            if (verbose)
+                std::cout << "Founded Modules: " << value << "\n";
+            if (debug)
+                hp::printlnCl("[Debug] Compiling Modules: " + value, hp::YELLOW);
+        } else if (line.find("Modules {") != std::string::npos) {
+            isModulesSet = true;
+            continue;
+        } else if (line.find("}") != std::string::npos && isModulesSet) {
+            isModulesSet = false;
+        } else if (isModulesSet) {
+            std::size_t pos = line.find_first_not_of(" \t");
+            if (pos != std::string::npos) {
+                std::string value = line.substr(pos);
+                value.erase(line.find_last_not_of(" \t") + 1);
+                if (modules.empty()) {
+                    modules = value;
+                } else {
+                    modules += " " + value;
+                }
+                if (verbose)
+                    std::cout << "Founded Modules: " << value << "\n";
+                if (debug)
+                    hp::printlnCl("[Debug] Compiling Modules: " + value, hp::YELLOW);
             }
         }
     }
