@@ -1,6 +1,6 @@
 Compiler: gcc
 InputFiles {
-    test/*.cpp
+    src/*.cpp
 }
 Output: hmm.exe
 Version: std=c++26
@@ -11,9 +11,5 @@ Github {
     https://github.com/Gag91/Help_Library.git -> .
 }
 Flags {
-    -fmodules
     -lstdc++exp
-}
-Modules {
-    --compile-std-module
 }

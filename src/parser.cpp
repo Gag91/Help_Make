@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <regex>
 
 void Parser::parse() {
     if (buildSere || compiler == "sere") {
@@ -198,7 +199,7 @@ void Parser::parse() {
                     f.create("build/HelpMake/dep");
                 }
                 if (verbose)
-                    std::cout << "[Help_Make] Downloading dependecies '" << url << "' ...\n";
+                    std::cout << "\n[Help_Make] Downloading dependecies '" << url << "' ...\n";
                 std::size_t slash = url.find_last_of("/");
                 std::string include = url.substr(slash + 1);
                 include.erase(include.find_last_not_of(" \t\r\n") + 1);
@@ -213,7 +214,7 @@ void Parser::parse() {
                 flags += " -I" + full_path;
                 if (debug) {
                     hp::printlnCl("[Debug] Github Folder include of " + value.substr(0, value.size() - 5) + ": '" + folder + "'", hp::YELLOW);
-                    hp::printlnCl("[Debug] Github Clone  Folder  of " + value.substr(0, value.size() - 5) + ": '" + include + "'", hp::YELLOW);
+                    hp::printlnCl("[Debug] Github Clone  Folder  of " + value.substr(0, value.size() - 5) + ": '" + include + "'\n", hp::YELLOW);
                 }
             }
         } else if (line.find("Modules:") != std::string::npos) {
@@ -295,35 +296,79 @@ void Parser::execute() {
         hp::printlnCl("Error: Unsupported compiler specified.", hp::Color::RED);
         exit(EXIT_FAILURE);
     }
-    std::string command;
-    if (compiler != "sere") {
-        command = comp + " -" + version + " " + modules + " " + inputFile + " -o " + output + " " + flags + (run ? " && " + output : "");
-    } else {
-        command = comp + " " + modules + " " + inputFile + " -o " + output + (run ? " && " + output : "");
-    }
-    if (verbose)
-        std::cout << "\nCommand: " << command << "\n";
-    std::string result = hp::command(command);
-    if (result.empty()) {
-        hp::printlnCl("Compilation successful. Output file: " + output, hp::Color::GREEN);
-    } else {
-        std::string test = hp::command("where " + (compiler == "zig" ? "zig" : comp));
-        if (test == "INFO: Could not find files for the given pattern(s).\n") {
 
+    std::string command;
+    std::string displayCommand;
+
+    if (compiler != "sere") {
+        std::string CMD = (version.empty() ? "" : version) + (modules.empty() ? "" : " " + modules) +
+                          inputFile +
+                          " -o" + output +
+                          (flags.empty() ? "" : " " + flags) +
+                          (run ? " && " + output : "");
+        command = comp + " -fdiagnostics-color=always -" + CMD;
+        displayCommand = comp + " -" + CMD;
+    } else {
+        command = comp + (modules.empty() ? "" : " " + modules) + inputFile + " -o" + output + (flags.empty() ? "" : " " + flags) + (run ? " && " + output : "");
+        displayCommand = command;
+    }
+
+    if (verbose) {
+        std::cout << "\nCommand: " << displayCommand << "\n";
+    }
+
+    std::string r_logDir = "build/HelpMake/logs/raw";
+    std::string logDir = "build/HelpMake/logs";
+    std::filesystem::create_directories(r_logDir);
+
+    size_t dotPos = output.find_last_of('.');
+    std::string baseName = (dotPos != std::string::npos) ? output.substr(0, dotPos) : output;
+
+    std::string r_logPath = r_logDir + "/" + baseName + ".txt";
+    std::string logPath = logDir + "/" + baseName + ".txt";
+
+    std::string redirectCmd = command + " > \"" + r_logPath + "\" 2>&1";
+    int exitCode = std::system(redirectCmd.c_str());
+
+    std::string result;
+    std::ifstream rawFile(r_logPath);
+    if (rawFile.is_open())
+        result.assign((std::istreambuf_iterator<char>(rawFile)), std::istreambuf_iterator<char>());
+
+    std::regex ansi_pattern("\x1B\\[[0-9;]*[a-zA-Z]");
+    std::string cleanLog = std::regex_replace(result, ansi_pattern, "");
+    std::ofstream cleanFile(logPath, std::ios::trunc);
+    if (cleanFile.is_open())
+        cleanFile << cleanLog;
+
+    if (exitCode == 0) {
+        hp::printlnCl("Compilation successful. Output file: " + output, hp::Color::GREEN);
+        if (!result.empty() && verbose) {
+            std::cout << result << "\n";
+        }
+    } else {
+        std::string whichCmd;
+        whichCmd = "where " + std::string(compiler == "zig" ? "zig" : comp) + " 2>nul";
+        std::string test = hp::command(whichCmd);
+
+        if (test == "INFO: Could not find files for the given pattern(s).\n") {
             if (compiler == "gcc") {
-                hp::printlnCl("Error: GCC compiler not found. Please ensure GCC is installed and added to the system PATH.\n", hp::Color::RED);
+                hp::printlnCl("Error: GCC compiler not found. Please install it and add it to PATH.", hp::Color::RED);
             } else if (compiler == "clang") {
-                hp::printlnCl("Error: Clang compiler not found. Please ensure Clang is installed and added to the system PATH.\n", hp::Color::RED);
+                hp::printlnCl("Error: Clang compiler not found. Please install it and add it to PATH.", hp::Color::RED);
             } else if (compiler == "msvc") {
-                hp::printlnCl("Error: MSVC compiler not found. Please ensure MSVC is installed and added to the system PATH.\n", hp::Color::RED);
+                hp::printlnCl("Error: MSVC compiler not found. Please install it and add it to PATH.", hp::Color::RED);
             } else if (compiler == "zig") {
-                hp::printlnCl("Error: Zig compiler not found. Please ensure Zig is installed and added to the system PATH.\n", hp::Color::RED);
+                hp::printlnCl("Error: Zig compiler not found. Please install it and add it to PATH.", hp::Color::RED);
             } else if (compiler == "sere") {
-                hp::printlnCl("Error: Sere compiler not found. Please ensure Sere is installed and added to the system PATH.\n", hp::Color::RED);
+                hp::printlnCl("Error: Sere compiler not found. Please install it and add it to PATH.", hp::Color::RED);
             }
         } else {
-            std::cout << result << "\n";
-            hp::printlnCl("Compilation Failed", hp::RED);
+            if (!cleanLog.empty()) {
+                std::cout << cleanLog << "\n";
+            }
+            hp::printlnCl("\nCompilation Failed", hp::RED);
+            hp::printlnCl("See Logs: " + logPath, hp::Color::YELLOW);
         }
         exit(EXIT_FAILURE);
     }
