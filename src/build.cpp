@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
         return 0;
     } else if (argument == "--dump") {
         if (std::filesystem::exists(filename)) {
-            std::ofstream file(filename);
+            std::ifstream file(filename);
             std::cout << file.rdbuf() << "\n";
         }
     } else if (argument == "--show") {
