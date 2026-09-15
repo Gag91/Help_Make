@@ -257,6 +257,46 @@ void Parser::parse() {
                 }
                 v_Modules.push_back(value);
             }
+        } else if (line.find("PreBuild {") != std::string::npos) {
+            isPreBuildSet = true;
+            continue;
+        } else if (line.find("}") != std::string::npos && isPreBuildSet) {
+            isPreBuildSet = false;
+        } else if (isPreBuildSet) {
+            std::size_t pos = line.find_first_not_of(" \t");
+            if (pos != std::string::npos) {
+                std::string value = line.substr(pos);
+                value.erase(value.find_last_not_of(" \t") + 1);
+                if (Precmd.empty()) {
+                    Precmd = value;
+                } else {
+                    Precmd += " && " + value;
+                }
+                if (verbose)
+                    std::cout << "Pre-build command: " << value << "\n";
+                if (debug)
+                    hp::printlnCl("[Debug] Pre-build command: '" + Precmd + "'", hp::YELLOW);
+            }
+        } else if (line.find("PostBuild {") != std::string::npos) {
+            isPostBuildSet = true;
+            continue;
+        } else if (line.find("}") != std::string::npos && isPostBuildSet) {
+            isPostBuildSet = false;
+        } else if (isPostBuildSet) {
+            std::size_t pos = line.find_first_not_of(" \t");
+            if (pos != std::string::npos) {
+                std::string value = line.substr(pos);
+                value.erase(value.find_last_not_of(" \t") + 1);
+                if (Postcmd.empty()) {
+                    Postcmd = value;
+                } else {
+                    Postcmd += " && " + value;
+                }
+                if (verbose)
+                    std::cout << "Post-build command: " << value << "\n";
+                if (debug)
+                    hp::printlnCl("[Debug] Post-build command: '" + Postcmd + "'", hp::YELLOW);
+            }
         }
     }
 
@@ -297,6 +337,25 @@ void Parser::execute() {
         exit(EXIT_FAILURE);
     }
 
+    if (!Precmd.empty()) {
+        if (verbose)
+            hp::printlnCl("Running pre-build command: " + Precmd, hp::CYAN);
+
+        int error = std::system(Precmd.c_str());
+        if (error == -1) {
+            hp::printlnCl("Error: Could not launch pre-build command.", hp::RED);
+            exit(EXIT_FAILURE);
+        }
+        if (error != 0) {
+            hp::printlnCl("Error: Pre-build command failed (exit code " +
+                              std::to_string(error) + ").",
+                          hp::RED);
+            exit(EXIT_FAILURE);
+        }
+        if (verbose)
+            hp::printlnCl("Pre-build command executed successfully.", hp::GREEN);
+    }
+
     std::string command;
     std::string displayCommand;
 
@@ -309,7 +368,8 @@ void Parser::execute() {
         command = comp + " -fdiagnostics-color=always -" + CMD;
         displayCommand = comp + " -" + CMD;
     } else {
-        command = comp + (modules.empty() ? "" : " " + modules) + inputFile + " -o" + output + (flags.empty() ? "" : " " + flags) + (run ? " && " + output : "");
+        command = comp + (modules.empty() ? "" : " " + modules) + inputFile + " -o" + output +
+                  (flags.empty() ? "" : " " + flags) + (run ? " && " + output : "");
         displayCommand = command;
     }
 
@@ -328,7 +388,9 @@ void Parser::execute() {
     std::string logPath = logDir + "/" + baseName + ".txt";
 
     std::string redirectCmd = command + " > \"" + r_logPath + "\" 2>&1";
+    auto timer = hp::startTimer();
     int exitCode = std::system(redirectCmd.c_str());
+    std::size_t elapsed = hp::stopTimer(timer);
 
     std::string result;
     std::ifstream rawFile(r_logPath);
@@ -345,6 +407,22 @@ void Parser::execute() {
         hp::printlnCl("Compilation successful. Output file: " + output, hp::Color::GREEN);
         if (!result.empty() && verbose) {
             std::cout << result << "\n";
+        }
+
+        if (!Postcmd.empty()) {
+            if (verbose)
+                hp::printlnCl("Running post-build command: " + Postcmd, hp::CYAN);
+
+            int Error = std::system(Postcmd.c_str());
+            if (Error == -1) {
+                hp::printlnCl("Warning: Could not launch post-build command.", hp::YELLOW);
+            } else if (Error != 0) {
+                hp::printlnCl("Warning: Post-build command failed (exit code " +
+                                  std::to_string(Error) + ").",
+                              hp::YELLOW);
+            } else if (verbose) {
+                hp::printlnCl("Post-build command executed successfully.", hp::GREEN);
+            }
         }
     } else {
         std::string whichCmd;
@@ -372,6 +450,9 @@ void Parser::execute() {
         }
         exit(EXIT_FAILURE);
     }
+
+    if (verbose)
+        std::cout << "Compiling time: " << elapsed << "\n";
 }
 
 void Parser::buildCommand() {

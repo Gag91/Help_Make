@@ -13,12 +13,16 @@ class Parser {
     std::string flags;
     std::string inputFile;
     std::string modules;
+    std::string Precmd;
+    std::string Postcmd;
 
     bool isInputFileSet = false;
     bool isIncludeSet = false;
     bool isGithubSet = false;
     bool isFlagsSet = false;
     bool isModulesSet = false;
+    bool isPreBuildSet = false;
+    bool isPostBuildSet = false;
     bool verbose = false;
     bool debug = false;
     bool run = false;
