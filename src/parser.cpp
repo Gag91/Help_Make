@@ -454,7 +454,7 @@ void Parser::execute() {
     }
 
     if (verbose)
-        std::cout << "Compiling time: " << elapsed << "\n";
+        std::cout << "Compiling time: " << elapsed << "s\n";
 }
 
 void Parser::buildCommand() {
