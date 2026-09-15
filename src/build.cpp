@@ -103,6 +103,11 @@ int main(int argc, char *argv[]) {
     } else if (argument == "--license" || argument == "-l") {
         build.license(hp::EXTENDED);
         return 0;
+    } else if (argument == "--dumb") {
+        if (std::filesystem::exists(filename)) {
+            std::ofstream file(filename);
+            std::cout << file.rdbuf() << "\n";
+        }
     } else if (argument == "--build" || argument == "-b") {
         for (int i = 2; i < argc; i++) {
             std::string_view arg = argv[i];
