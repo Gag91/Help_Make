@@ -217,7 +217,7 @@ void Parser::parse() {
                     hp::printlnCl("[Debug] Github Folder include of " + value.substr(0, value.size() - 5) + ": '" + folder + "'", hp::YELLOW);
                     hp::printlnCl("[Debug] Github Clone  Folder  of " + value.substr(0, value.size() - 5) + ": '" + include + "'\n", hp::YELLOW);
                 }
-                v_Github.push_back(value.substr(0, value.size() - 5) + "->" + folder);
+                v_Github.push_back(value.substr(0, value.size() - 5) + " -> " + folder);
             }
         } else if (line.find("Modules:") != std::string::npos) {
             std::size_t pos = line.find("Modules:");
