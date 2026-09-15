@@ -113,6 +113,7 @@ void Parser::parse() {
                 std::string value = line.substr(pos);
                 value.erase(value.find_last_not_of(" \t") + 1);
                 inputFile += " " + value;
+                v_inputFiles.push_back(value);
                 if (verbose)
                     std::cout << "Founded Input Files: '" << inputFile << "'" << std::endl;
             }
@@ -216,6 +217,7 @@ void Parser::parse() {
                     hp::printlnCl("[Debug] Github Folder include of " + value.substr(0, value.size() - 5) + ": '" + folder + "'", hp::YELLOW);
                     hp::printlnCl("[Debug] Github Clone  Folder  of " + value.substr(0, value.size() - 5) + ": '" + include + "'\n", hp::YELLOW);
                 }
+                v_Github.push_back(value.substr(0, value.size() - 5) + "->" + folder);
             }
         } else if (line.find("Modules:") != std::string::npos) {
             std::size_t pos = line.find("Modules:");
@@ -488,4 +490,24 @@ void Parser::buildCommand() {
     }
     execute();
     hp::exit(0);
+}
+
+std::vector<std::string> Parser::getInputFile() {
+    return v_inputFiles;
+}
+
+std::vector<std::string> Parser::getInclude() {
+    return includeFiles;
+}
+
+std::vector<std::string> Parser::getFlags() {
+    return v_Flags;
+}
+
+std::vector<std::string> Parser::getModules() {
+    return v_Modules;
+}
+
+std::vector<std::string> Parser::getGithub() {
+    return v_Github;
 }

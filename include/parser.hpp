@@ -30,8 +30,10 @@ class Parser {
     bool buildSere = false;
 
     std::vector<std::string> includeFiles;
+    std::vector<std::string> v_inputFiles;
     std::vector<std::string> v_Flags;
     std::vector<std::string> v_Modules;
+    std::vector<std::string> v_Github;
 
   public:
     Parser(std::filesystem::path file, std::string inputFile, std::string comp, std::string ver,
@@ -42,4 +44,9 @@ class Parser {
     void parse();
     void execute();
     void buildCommand();
+    std::vector<std::string> getInputFile();
+    std::vector<std::string> getInclude();
+    std::vector<std::string> getFlags();
+    std::vector<std::string> getModules();
+    std::vector<std::string> getGithub();
 };

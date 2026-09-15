@@ -12,29 +12,47 @@ class Build {
     void help() const {
         std::cout << "Help_Make (hm) - Build System\n";
         std::cout << "Use : hm [options]\n\n";
+
         std::cout << "Options:\n";
         std::cout << "  -h, --help     Output this help message\n";
         std::cout << "  -v, --version  Output the program version\n";
-        std::cout << "  -b, --build    Build HelpMake.txt\n";
-        std::cout << "  -l, --license  Output the license information\n\n";
-        std::cout << "Avaible Compilers:\n";
-        std::cout << "  -Gcc   - GNU Compiler Collection\n";
-        std::cout << "  -Clang - LLVM Compiler\n";
-        std::cout << "  -MSVC  - Microsoft Visual C++ Compiler\n\n";
-        std::cout << "  -Zig   - Zig Compiler (C/C++ support)\n\n";
-        std::cout << "Avaible Flags:\n";
-        std::cout << "  -I<path>     Include a specified directory\n";
-        std::cout << "  -F<flags>    Add specified flags\n";
-        std::cout << "  -L<library>  include a specified library\n";
-        std::cout << "  -r --run     run output file if compiled\n";
-        std::cout << "Avaible Versions:\n";
+        std::cout << "  -b, --build    Build using HelpMake.txt\n";
+        std::cout << "  -l, --license  Output the license information\n";
+        std::cout << "      --show     Show current configuration\n";
+        std::cout << "      --dump     Print raw HelpMake.txt contents\n\n";
+
+        std::cout << "Build Options (use with -b):\n";
+        std::cout << "  -Gcc           Use GNU Compiler Collection\n";
+        std::cout << "  -Clang         Use LLVM Clang Compiler\n";
+        std::cout << "  -MSVC          Use Microsoft Visual C++ Compiler\n";
+        std::cout << "  -Zig           Use Zig Compiler (C/C++ support)\n";
+        std::cout << "  -Sere          Use Sere Compiler\n\n";
+
+        std::cout << "Build Flags:\n";
+        std::cout << "  -I<path>       Include a specified directory\n";
+        std::cout << "  -L<path>       Link a specified library path\n";
+        std::cout << "  -F<flags>      Add specified compiler flags\n";
+        std::cout << "  -o<file>       Set output filename\n";
+        std::cout << "  -r, --run      Run output file after compilation\n";
+        std::cout << "      --nofile   Build from command line only (no config file)\n";
+        std::cout << "      --verbose  Show detailed build output\n";
+        std::cout << "      --debug    Show debug information\n\n";
+
+        std::cout << "Available Versions:\n";
         std::cout << "  -std=c++98\n";
         std::cout << "  -std=c++11\n";
         std::cout << "  -std=c++14\n";
         std::cout << "  -std=c++17\n";
         std::cout << "  -std=c++20\n";
         std::cout << "  -std=c++23\n";
-        std::cout << "  -std=c++26\n";
+        std::cout << "  -std=c++26\n\n";
+
+        std::cout << "Examples:\n";
+        std::cout << "  hm -b                        Build from HelpMake.txt\n";
+        std::cout << "  hm -b -clang -o main.exe     Build with Clang\n";
+        std::cout << "  hm -b --nofile -gcc main.cpp Build from command line\n";
+        std::cout << "  hm --show                    Show current config\n";
+        std::cout << "  hm --dump                    Print raw config file\n";
     }
 
     void version() const {
@@ -103,11 +121,65 @@ int main(int argc, char *argv[]) {
     } else if (argument == "--license" || argument == "-l") {
         build.license(hp::EXTENDED);
         return 0;
-    } else if (argument == "--dumb") {
+    } else if (argument == "--dump") {
         if (std::filesystem::exists(filename)) {
             std::ofstream file(filename);
             std::cout << file.rdbuf() << "\n";
         }
+    } else if (argument == "--show") {
+        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere);
+        parser.parse();
+
+        std::cout << "Compiler: " << compiler << "\n";
+        std::cout << "Version:  " << version << "\n";
+        std::cout << "Output:   " << output << "\n\n";
+
+        auto files = parser.getInputFile();
+        if (!files.empty()) {
+            std::cout << "InputFiles:\n";
+            for (const auto &f : files) {
+                std::cout << "    " << f << "\n";
+            }
+            std::cout << "\n";
+        }
+
+        auto includes = parser.getInclude();
+        if (!includes.empty()) {
+            std::cout << "IncludeFiles:\n";
+            for (const auto &i : includes) {
+                std::cout << "    " << i << "\n";
+            }
+            std::cout << "\n";
+        }
+
+        auto flags_ = parser.getFlags();
+        if (!flags_.empty()) {
+            std::cout << "Flags:\n";
+            for (const auto &f : flags_) {
+                std::cout << "    " << f << "\n";
+            }
+            std::cout << "\n";
+        }
+
+        auto modules_ = parser.getModules();
+        if (!modules_.empty()) {
+            std::cout << "Modules:\n";
+            for (const auto &m : modules_) {
+                std::cout << "    " << m << "\n";
+            }
+            std::cout << "\n";
+        }
+
+        auto github_ = parser.getGithub();
+        if (!github_.empty()) {
+            std::cout << "Github:\n";
+            for (const auto &g : github_) {
+                std::cout << "    " << g << "\n";
+            }
+            std::cout << "\n";
+        }
+
+        return 0;
     } else if (argument == "--build" || argument == "-b") {
         for (int i = 2; i < argc; i++) {
             std::string_view arg = argv[i];
