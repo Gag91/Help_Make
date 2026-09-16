@@ -18,8 +18,10 @@ class Build {
         std::cout << "  -v, --version  Output the program version\n";
         std::cout << "  -b, --build    Build using HelpMake.txt\n";
         std::cout << "  -l, --license  Output the license information\n";
+        std::cout << "  -f, --file     Specify a custom HelpMake file\n";
         std::cout << "      --show     Show current configuration\n";
-        std::cout << "      --dump     Print raw HelpMake.txt contents\n\n";
+        std::cout << "      --dump     Print raw HelpMake.txt contents\n";
+        std::cout << "      --create   Generate HelpMake.txt from build arguments\n\n";
 
         std::cout << "Build Options (use with -b):\n";
         std::cout << "  -Gcc           Use GNU Compiler Collection\n";
@@ -48,16 +50,29 @@ class Build {
         std::cout << "  -std=c++26\n\n";
 
         std::cout << "Examples:\n";
-        std::cout << "  hm -b                        Build from HelpMake.txt\n";
-        std::cout << "  hm -b -clang -o main.exe     Build with Clang\n";
-        std::cout << "  hm -b --nofile -gcc main.cpp Build from command line\n";
-        std::cout << "  hm --show                    Show current config\n";
-        std::cout << "  hm --dump                    Print raw config file\n";
+        std::cout << "  Build from HelpMake.txt\n";
+        std::cout << "  hm -b\n\n";
+
+        std::cout << "  Build with a specific compiler\n";
+        std::cout << "  hm -b -clang -o main.exe\n\n";
+
+        std::cout << "  Build from command line (no config file)\n";
+        std::cout << "  hm -b --nofile -gcc main.cpp -o main.exe\n\n";
+
+        std::cout << "  Generate a HelpMake.txt from arguments\n";
+        std::cout << "  hm -b -Gcc -std=c++26 -F-Wall -Iinclude src/main.cpp -o main.exe --create\n\n";
+
+        std::cout << "  Use a custom config file\n";
+        std::cout << "  hm -b -f custom.txt\n\n";
+
+        std::cout << "  Show current config / raw file\n";
+        std::cout << "  hm --show\n";
+        std::cout << "  hm --dump\n";
     }
 
     void version() const {
         std::cout << "Help_Make (hm) - Build System\n";
-        std::cout << "Version: 2.0.0\n";
+        std::cout << "Version: 3.5.0\n";
         std::cout << "Author : Xavi99\n";
         std::cout << "Website: https://github.com/Xavi99/Help_Make\n";
         std::cout << "This program is licensed under the MIT License. See \"--license\" for details.\n\n";
