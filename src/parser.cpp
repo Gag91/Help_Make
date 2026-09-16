@@ -5,8 +5,91 @@
 #include <fstream>
 #include <iostream>
 #include <regex>
+#include <sstream>
 
 void Parser::parse() {
+    if (create) {
+        hp::File file;
+
+        std::istringstream issInput(inputFile);
+        std::string token;
+        while (issInput >> token)
+            v_inputFiles.push_back(token);
+
+        std::istringstream issFlags(flags);
+        while (issFlags >> token)
+            v_Flags.push_back(token);
+
+        std::istringstream issModules(modules);
+        while (issModules >> token)
+            v_Modules.push_back(token);
+
+        bool shouldWrite = true;
+
+        if (file.exists(filename.string())) {
+            hp::printlnCl("Warning: " + filename.string() + " already exists. Overwrite? (y/n)", hp::Color::YELLOW);
+            char verif = hp::get<char>("", "Invalid choice");
+            if (verif != 'y') {
+                hp::printlnCl("File was not overwritten.", hp::Color::GREEN);
+                return;
+            }
+            shouldWrite = true;
+        }
+
+        if (shouldWrite) {
+            hp::save(filename.string(), {{"Compiler", compiler}, {"Version", version}, {"Output", output}});
+            std::ofstream make(filename.string(), std::ios::app);
+            make << "\nInputFiles {\n";
+            for (const auto &input : v_inputFiles) {
+                make << "    " << input << "\n";
+            }
+            make << "}\n";
+
+            if (!v_Flags.empty()) {
+                make << "\nFlags {\n";
+                for (const auto &f : v_Flags) {
+                    make << "    " << f << "\n";
+                }
+                make << "}\n";
+            }
+
+            if (!v_Github.empty()) {
+                make << "\nGithub {\n";
+                for (const auto &g : v_Github) {
+                    make << "    " << g << "\n";
+                }
+                make << "}\n";
+            }
+
+            if (!v_Modules.empty()) {
+                make << "\nModules {\n";
+                for (const auto &m : v_Modules) {
+                    make << "    " << m << "\n";
+                }
+                make << "}\n";
+            }
+
+            if (!v_Precmd.empty()) {
+                make << "\nPreBuild {\n";
+                for (const auto &cmd : v_Precmd) {
+                    make << "    " << cmd << "\n";
+                }
+                make << "}\n";
+            }
+
+            if (!v_Postcmd.empty()) {
+                make << "\nPostBuild {\n";
+                for (const auto &cmd : v_Postcmd) {
+                    make << "    " << cmd << "\n";
+                }
+                make << "}\n";
+            }
+
+            make.close();
+            hp::printlnCl(filename.string() + " was created successfully.", hp::Color::GREEN);
+        }
+        return;
+    }
     if (buildSere || compiler == "sere") {
         execute();
         return;
@@ -278,6 +361,7 @@ void Parser::parse() {
                     std::cout << "Pre-build command: " << value << "\n";
                 if (debug)
                     hp::printlnCl("[Debug] Pre-build command: '" + Precmd + "'", hp::YELLOW);
+                v_Precmd.push_back(value);
             }
         } else if (line.find("PostBuild {") != std::string::npos) {
             isPostBuildSet = true;
@@ -298,6 +382,7 @@ void Parser::parse() {
                     std::cout << "Post-build command: " << value << "\n";
                 if (debug)
                     hp::printlnCl("[Debug] Post-build command: '" + Postcmd + "'", hp::YELLOW);
+                v_Postcmd.push_back(value);
             }
         }
     }
@@ -363,7 +448,7 @@ void Parser::execute() {
 
     if (compiler != "sere") {
         std::string CMD = (version.empty() ? "" : version) + (modules.empty() ? "" : " " + modules) +
-                          inputFile +
+                          " " + inputFile +
                           " -o" + output +
                           (flags.empty() ? "" : " " + flags) +
                           (run ? " && " + output : "");
@@ -392,7 +477,7 @@ void Parser::execute() {
     std::string redirectCmd = command + " > \"" + r_logPath + "\" 2>&1";
     auto timer = hp::startTimer();
     int exitCode = std::system(redirectCmd.c_str());
-    std::size_t elapsed = hp::stopTimer(timer);
+    double elapsed = hp::stopTimer(timer);
 
     std::string result;
     std::ifstream rawFile(r_logPath);
@@ -510,4 +595,14 @@ std::vector<std::string> Parser::getModules() {
 
 std::vector<std::string> Parser::getGithub() {
     return v_Github;
+}
+
+std::string Parser::getCompiler() {
+    return compiler;
+}
+std::string Parser::getOutput() {
+    return output;
+}
+std::string Parser::getVersion() {
+    return version;
 }

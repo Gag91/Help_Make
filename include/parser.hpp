@@ -28,25 +28,33 @@ class Parser {
     bool run = false;
     bool n_file = false;
     bool buildSere = false;
+    bool create = false;
 
     std::vector<std::string> includeFiles;
     std::vector<std::string> v_inputFiles;
     std::vector<std::string> v_Flags;
     std::vector<std::string> v_Modules;
     std::vector<std::string> v_Github;
+    std::vector<std::string> v_Postcmd;
+    std::vector<std::string> v_Precmd;
 
   public:
     Parser(std::filesystem::path file, std::string inputFile, std::string comp, std::string ver,
-           std::string out, std::string flg, bool verbose, bool run, bool debug, bool n_file, bool buildSere)
+           std::string out, std::string flg, bool verbose, bool run, bool debug, bool n_file, bool buildSere, bool create)
         : filename(file), inputFile(inputFile), compiler(comp), version(ver), output(out), flags(flg),
-          verbose(verbose), run(run), debug(debug), n_file(n_file), buildSere(buildSere) {}
+          verbose(verbose), run(run), debug(debug), n_file(n_file), buildSere(buildSere), create(create) {}
 
     void parse();
     void execute();
     void buildCommand();
+
     std::vector<std::string> getInputFile();
     std::vector<std::string> getInclude();
     std::vector<std::string> getFlags();
     std::vector<std::string> getModules();
     std::vector<std::string> getGithub();
+
+    std::string getCompiler();
+    std::string getOutput();
+    std::string getVersion();
 };

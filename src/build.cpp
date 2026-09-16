@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
     bool debug = false;
     bool n_file = false;
     bool sere = false;
+    bool create = false;
     Build build;
 
     if (argc < 2) {
@@ -127,12 +128,12 @@ int main(int argc, char *argv[]) {
             std::cout << file.rdbuf() << "\n";
         }
     } else if (argument == "--show") {
-        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere);
+        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create);
         parser.parse();
 
-        std::cout << "Compiler: " << compiler << "\n";
-        std::cout << "Version:  " << version << "\n";
-        std::cout << "Output:   " << output << "\n\n";
+        std::cout << "Compiler: " << parser.getCompiler() << "\n";
+        std::cout << "Version:  " << parser.getVersion() << "\n";
+        std::cout << "Output:   " << parser.getOutput() << "\n\n";
 
         auto files = parser.getInputFile();
         if (!files.empty()) {
@@ -250,6 +251,15 @@ int main(int argc, char *argv[]) {
                 if (!flags.empty())
                     flags += " ";
                 flags += "-L" + libPath;
+            } else if (arg == "-f" || arg == "--file") {
+                if (i + 1 < argc && argv[i + 1][0] != '-') {
+                    filename = std::string(argv[++i]);
+                } else {
+                    hp::printlnCl("Error: filename not specified after '" + std::string(arg) + "'.", hp::Color::RED);
+                    exit(EXIT_FAILURE);
+                }
+            } else if (arg.rfind("-f", 0) == 0 && arg.size() > 2) {
+                filename = std::string(arg).substr(2);
             } else if (arg == "-v" || arg == "--verbose") {
                 verbose = true;
             } else if (arg == "-r" || arg == "--run") {
@@ -258,6 +268,8 @@ int main(int argc, char *argv[]) {
                 debug = true;
             } else if (arg == "--nofile") {
                 n_file = true;
+            } else if (arg == "--create") {
+                create = true;
             } else if (!arg.empty() && (arg.back() == '/' || arg.back() == '\\')) {
                 filename = std::string(arg) + "HelpMake.txt";
                 if (verbose)
@@ -280,19 +292,20 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (!std::filesystem::exists(filename) && !n_file) {
+        if (!std::filesystem::exists(filename) && !n_file && !create) {
             if (filename != "HelpMake.txt" && std::filesystem::exists("HelpMake.txt")) {
                 hp::printlnCl("Build file not found. Using default HelpMake.txt", hp::Color::YELLOW);
                 filename = "HelpMake.txt";
             }
         }
 
-        if (std::filesystem::exists(filename) && !n_file) {
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere);
+        if (std::filesystem::exists(filename) && !n_file && !create) {
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create);
             parser.parse();
-            parser.execute();
+            if (!create)
+                parser.execute();
         } else {
-            if (!n_file) {
+            if (!n_file && !create) {
                 hp::printlnCl("Build file not found: " + filename, hp::Color::YELLOW);
             }
             if (verbose)
@@ -313,9 +326,10 @@ int main(int argc, char *argv[]) {
                 output = "a.exe";
             }
 
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create);
             parser.parse();
-            parser.execute();
+            if (!create)
+                parser.execute();
         }
     } else {
         hp::printlnCl("Error: Invalid command. Use \"--help\" for available commands.", hp::Color::RED);
