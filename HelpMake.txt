@@ -3,11 +3,10 @@ InputFiles {
     src/*.cpp
 }
 Output: hmm.exe
-Version: std=c++26
+Version: std=c++17
 Includes {
     include
 }
 Flags {
     -lstdc++exp
-    -freflection
 }
