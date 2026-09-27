@@ -2,7 +2,7 @@
 Help_Make (hm) is a simple, lightweight build system that makes compiling C++ projects easy.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![C++20](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
+[![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://isocpp.org/)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/)
 
 ## Features
