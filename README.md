@@ -2,7 +2,7 @@
 Help_Make (hm) is a simple, lightweight build system that makes compiling C++ projects easy.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
+[![C++20](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/)
 
 ## Features
@@ -12,12 +12,13 @@ Help_Make (hm) is a simple, lightweight build system that makes compiling C++ pr
 - Flexible Input - Specify source files in config or on the command line
 - Clean Output - Color-coded messages for errors and success
 - Lightweight
+- Avaible on Both Linux and Windows !
 
 ## Quick Start
 1. Create a HelpMake.txt file in your project (Comments arent supported yet..):
 ```txt
 Compiler: gcc
-Version: std=c++17
+Version: std=c++23
 Output: program.exe
 InputFiles {
     main.cpp
@@ -63,6 +64,10 @@ hm -b -Gcc -std=c++20 -oapp.exe -main.cpp
 # Show license
 hm -l
 hm --license
+
+# Dump and Show
+hm --dump
+hm --show
 ```
 
 ## Command line option | See hm --help
@@ -93,12 +98,14 @@ hm --license
  ### Other
  - --verbose    Make building more verbose
  - --debug      Enable debug mode
+ - --dump       Outputs raw file
+ - --show       Outputs pretty file
 
 ## Installation
 ```bash
-git clone https://github.com/Xavi99/Help_Make.git
+git clone https://github.com/Gag91/Help_Make.git
 cd Help_Make
-g++ -std=c++17 src/build.cpp src/parser.cpp -o hm.exe
+g++ -std=c++20 src/build.cpp src/parser.cpp -o hm.exe
 ```
 Optional :
 ```bash
@@ -106,8 +113,7 @@ setx PATH "%PATH%;C:\path\to\Help_Make"
 ```
 
 ## Requirements
-- C++17
-- Windows
+- C++20
 
 ## License
 This program is licensed under the MIT License. See license file for details.
