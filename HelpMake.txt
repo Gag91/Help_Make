@@ -3,7 +3,7 @@ InputFiles {
     src/*.cpp
 }
 Output: hmm.exe
-Version: std=c++17
+Version: std=c++20
 Includes {
     include
 }
