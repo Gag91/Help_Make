@@ -1,5 +1,11 @@
 #include "parser.hpp"
-#include "hp/help.hpp"
+#include "hp/colors/color.hpp"
+#include "hp/containers/containers.hpp"
+#include "hp/other/other.hpp"
+#include "hp/serializer/serialize.hpp"
+#include "hp/string/string.hpp"
+#include "hp/system/command.hpp"
+#include "hp/time/time.hpp"
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
@@ -168,8 +174,15 @@ void Parser::parse() {
                 output = value;
 
             if (output.empty()) {
-                hp::printlnCl("Output not specified in the file. Using default: a.exe", hp::Color::YELLOW);
+                std::string d_output;
+#ifdef _WIN32
+                d_output = "a.exe";
                 output = "a.exe";
+#else
+                d_output = "a.out";
+                output = "a.out";
+#endif
+                hp::printlnCl("Warning: No output file specified. Using default: " + d_output, hp::Color::YELLOW);
             }
             if (verbose)
                 std::cout << "Founded Output: '" << output << "' \n";
@@ -273,11 +286,20 @@ void Parser::parse() {
                 url.erase(url.find_last_not_of(" \t\r\n") + 1);
                 folder.erase(0, folder.find_first_not_of(" \t\r\n"));
                 folder.erase(folder.find_last_not_of(" \t\r\n") + 1);
-                std::string test = hp::command("where git");
+                std::string test;
+#ifdef _WIN32
+                test = hp::command("where git");
                 if (test == "INFO: Could not find files for the given pattern(s).") {
                     hp::printlnCl("Error: Git system not found. Please ensure Git is installed and added to the system PATH.\n", hp::Color::RED);
                     exit(EXIT_FAILURE);
                 }
+#else
+                int ExitGit = std::system("wich git");
+                if (ExitGit != 0) {
+                    hp::printlnCl("Error: Git system not found. Please ensure Git is installed and added to the system PATH.\n", hp::Color::RED);
+                    exit(EXIT_FAILURE);
+                }
+#endif
                 hp::Folder f;
                 if (!f.exists("build/HelpMake/dep")) {
                     f.create("build/HelpMake/dep");
@@ -512,6 +534,7 @@ void Parser::execute() {
             }
         }
     } else {
+#ifdef _WIN32
         std::string whichCmd;
         whichCmd = "where " + std::string(compiler == "zig" ? "zig" : comp) + " 2>nul";
         std::string test = hp::command(whichCmd);
@@ -528,6 +551,23 @@ void Parser::execute() {
             } else if (compiler == "sere") {
                 hp::printlnCl("Error: Sere compiler not found. Please install it and add it to PATH.", hp::Color::RED);
             }
+#else
+        std::string whichCmd;
+        whichCmd = "which " + std::string(compiler == "zig" ? "zig" : comp) + " 2>/dev/null";
+        int test = std::system(whichCmd.c_str());
+        if (test != 0) {
+            if (compiler == "gcc") {
+                hp::printlnCl("Error: GCC compiler not found. Please install it and add it to PATH.", hp::Color::RED);
+            } else if (compiler == "clang") {
+                hp::printlnCl("Error: Clang compiler not found. Please install it and add it to PATH.", hp::Color::RED);
+            } else if (compiler == "msvc") {
+                hp::printlnCl("Error: MSVC is not supported on the current platform", hp::Color::RED);
+            } else if (compiler == "zig") {
+                hp::printlnCl("Error: Zig compiler not found. Please install it and add it to PATH.", hp::Color::RED);
+            } else if (compiler == "sere") {
+                hp::printlnCl("Error: Sere compiler not found. Please install it and add it to PATH.", hp::Color::RED);
+            }
+#endif
         } else {
             if (!cleanLog.empty()) {
                 std::cout << result << "\n";

@@ -1,4 +1,7 @@
-#include "hp/help.hpp"
+#include "hp/borderStyle/border.hpp"
+#include "hp/colors/color.hpp"
+#include "hp/other/other.hpp"
+#include "hp/string/string.hpp"
 #include "parser.hpp"
 #include <filesystem>
 #include <fstream>
@@ -26,7 +29,7 @@ class Build {
         std::cout << "Build Options (use with -b):\n";
         std::cout << "  -Gcc           Use GNU Compiler Collection\n";
         std::cout << "  -Clang         Use LLVM Clang Compiler\n";
-        std::cout << "  -MSVC          Use Microsoft Visual C++ Compiler\n";
+        std::cout << "  -MSVC          Use Microsoft Visual C++ Compiler, Windows only\n";
         std::cout << "  -Zig           Use Zig Compiler (C/C++ support)\n";
         std::cout << "  -Sere          Use Sere Compiler\n\n";
 
@@ -337,8 +340,15 @@ int main(int argc, char *argv[]) {
             }
 
             if (output.empty()) {
-                hp::printlnCl("Warning: No output file specified. Using default: a.exe", hp::Color::YELLOW);
+                std::string d_output;
+#ifdef _WIN32
+                d_output = "a.exe";
                 output = "a.exe";
+#else
+                d_output = "a.out";
+                output = "a.out";
+#endif
+                hp::printlnCl("Warning: No output file specified. Using default: " + d_output, hp::Color::YELLOW);
             }
 
             Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create);
