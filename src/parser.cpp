@@ -208,7 +208,10 @@ void Parser::parse() {
             if (pos != std::string::npos) {
                 std::string value = line.substr(pos);
                 value.erase(value.find_last_not_of(" \t") + 1);
-                inputFile += " " + value;
+                if (!inputFile.empty()) {
+                    inputFile += " " + value;
+                } else
+                    inputFile = value;
                 v_inputFiles.push_back(value);
                 if (verbose)
                     std::cout << "Founded Input Files: '" << inputFile << "'" << std::endl;
@@ -477,7 +480,7 @@ void Parser::execute() {
 
     if (compiler != "sere") {
         std::string CMD = (version.empty() ? "" : version) + (modules.empty() ? "" : " " + modules) +
-                          inputFile +
+                          " " + inputFile +
                           " -o" + output +
                           (flags.empty() ? "" : " " + flags) +
                           (run ? " && " + output : "");
