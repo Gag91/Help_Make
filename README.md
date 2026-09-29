@@ -12,7 +12,7 @@ Help_Make (hm) is a simple, lightweight build system that makes compiling C++ pr
 - Flexible Input - Specify source files in config or on the command line
 - Clean Output - Color-coded messages for errors and success
 - Lightweight
-- Avaible on Both Linux and Windows !
+- Available on Both Linux and Windows !
 
 ## Quick Start
 1. Create a HelpMake.txt file in your project (Comments arent supported yet..):
