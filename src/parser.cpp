@@ -477,7 +477,7 @@ void Parser::execute() {
 
     if (compiler != "sere") {
         std::string CMD = (version.empty() ? "" : version) + (modules.empty() ? "" : " " + modules) +
-                          " " + inputFile +
+                          inputFile +
                           " -o" + output +
                           (flags.empty() ? "" : " " + flags) +
                           (run ? " && " + output : "");
