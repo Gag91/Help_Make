@@ -6,6 +6,7 @@ Output: hmm.exe
 Version: std=c++20
 Includes {
     include
+    .
 }
 Flags {
     -lstdc++exp

@@ -230,7 +230,12 @@ void Parser::parse() {
             isIncludeSet = false;
             if (verbose) {
                 std::cout << "Founded Include Files: \n";
-                hp::printlnAll(includeFiles);
+                for (const auto &vec : includeFiles) {
+                    if (vec == ".") {
+                        std::cout << std::format("- [root]\n");
+                    } else
+                        std::cout << std::format("- {}\n", vec);
+                }
             }
         } else if (isIncludeSet) {
             std::size_t pos = line.find_first_not_of(" \t");
@@ -247,7 +252,9 @@ void Parser::parse() {
             isFlagsSet = false;
             if (verbose) {
                 std::cout << "Founded Flags:\n";
-                hp::printlnAll(v_Flags);
+                for (const auto &vec : v_Flags) {
+                    std::cout << std::format("- {}\n", vec);
+                };
             }
         } else if (isFlagsSet) {
             std::size_t pos = line.find_first_not_of(" \t");
