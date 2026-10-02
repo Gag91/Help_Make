@@ -1,7 +1,6 @@
 #include "hp/borderStyle/border.hpp"
 #include "hp/colors/color.hpp"
 #include "hp/other/other.hpp"
-#include "hp/string/string.hpp"
 #include "parser.hpp"
 #include <filesystem>
 #include <fstream>
