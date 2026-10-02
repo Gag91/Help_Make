@@ -11,9 +11,3 @@ Includes {
 Flags {
     -lstdc++exp
 }
-
-Config: test {
-    InputFiles: test/test.cpp src/parser.cpp
-    Output: Test.exe
-    Includes: include
-}

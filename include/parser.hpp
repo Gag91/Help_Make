@@ -52,6 +52,7 @@ class Parser {
     bool buildSere = false;
     bool create = false;
     bool allCfgs = false;
+    bool json = false;
 
     std::vector<std::string> includeFiles;
     std::vector<std::string> v_inputFiles;
@@ -67,14 +68,15 @@ class Parser {
 
   public:
     Parser(std::filesystem::path file, std::string inputFile, std::string comp, std::string ver,
-           std::string out, std::string flg, bool verbose, bool run, bool debug, bool n_file, bool buildSere, bool create, bool allCfgs)
+           std::string out, std::string flg, bool verbose, bool run, bool debug, bool n_file, bool buildSere, bool create, bool allCfgs, bool json)
         : filename(file), inputFile(inputFile), compiler(comp), version(ver), output(out), flags(flg),
-          verbose(verbose), run(run), debug(debug), n_file(n_file), buildSere(buildSere), create(create), allCfgs(allCfgs) {}
+          verbose(verbose), run(run), debug(debug), n_file(n_file), buildSere(buildSere), create(create), allCfgs(allCfgs), json(json) {}
 
     void parse();
     void execute();
     void buildCommand();
     void executeConfigs(const std::vector<std::string> &names);
+    void generateCompileCommands();
 
     std::vector<std::string> getInputFile();
     std::vector<std::string> getInclude();

@@ -127,6 +127,7 @@ int main(int argc, char *argv[]) {
     bool sere = false;
     bool create = false;
     bool allCfgs = false;
+    bool json = false;
 
     std::vector<std::string> selectedConfigs;
     Build build;
@@ -153,7 +154,7 @@ int main(int argc, char *argv[]) {
             std::cout << file.rdbuf() << "\n";
         }
     } else if (argument == "--show") {
-        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs);
+        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json);
         parser.parse();
 
         std::cout << "Compiler: " << parser.getCompiler() << "\n";
@@ -319,6 +320,8 @@ int main(int argc, char *argv[]) {
                 n_file = true;
             } else if (arg == "--create") {
                 create = true;
+            } else if (arg == "--json") {
+                json = true;
             } else if (!arg.empty() && (arg.back() == '/' || arg.back() == '\\')) {
                 filename = std::string(arg) + "HelpMake.txt";
                 if (verbose)
@@ -349,7 +352,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (std::filesystem::exists(filename) && !n_file && !create) {
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json);
             parser.parse();
             if (!create) {
                 parser.executeConfigs(selectedConfigs);
@@ -389,7 +392,7 @@ int main(int argc, char *argv[]) {
                 hp::printlnCl("Warning: No output file specified. Using default: " + d_output, hp::Color::YELLOW);
             }
 
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json);
             parser.parse();
             if (!create)
                 parser.execute();

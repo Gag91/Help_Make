@@ -528,6 +528,10 @@ void Parser::execute() {
         exit(EXIT_FAILURE);
     }
 
+    if (json) {
+        Parser::generateCompileCommands();
+    }
+
     if (!Precmd.empty()) {
         if (verbose)
             hp::printlnCl(std::format("Running pre-build command: {}", Precmd), hp::Color::CYAN);
@@ -782,6 +786,43 @@ std::string Parser::processGithubEntry(const std::string &value) {
     }
 
     return fullPath;
+}
+
+void Parser::generateCompileCommands() {
+    std::ofstream json("compile_commands.json");
+    if (!json.is_open()) {
+        hp::printlnCl("Warning: Could not write compile_commands.json", hp::Color::YELLOW);
+        return;
+    }
+
+    std::string cwd = std::filesystem::current_path().generic_string();
+    std::string comp = compilerCommand(compiler);
+
+    std::string incFlags;
+    for (const auto &inc : includeFiles)
+        incFlags += std::format(" -I{}", inc);
+
+    json << "[\n";
+    bool first = true;
+    for (const auto &file : v_inputFiles) {
+        if (!first)
+            json << ",\n";
+        first = false;
+
+        std::string command = std::format("{} -{} {} -o {} {}{}",
+                                          comp, version, file, output, flags, incFlags);
+
+        json << "  {\n";
+        json << "    \"directory\": \"" << cwd << "\",\n";
+        json << "    \"command\": \"" << command << "\",\n";
+        json << "    \"file\": \"" << file << "\"\n";
+        json << "  }";
+    }
+    json << "\n]\n";
+    json.close();
+
+    if (verbose)
+        hp::printlnCl("Generated compile_commands.json", hp::Color::GREEN);
 }
 
 std::vector<std::string> Parser::getInputFile() {
