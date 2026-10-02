@@ -12,22 +12,8 @@ Flags {
     -lstdc++exp
 }
 
-Config: xavi {
-    Github {
-        https://github.com/Eczbek/xieite.git -> include
-    }
-    Includes {
-        include
-        include/hp
-    }
-}
-
-Config: fufu {
-    Github {
-        https://github.com/Gag91/Help_Serialize -> include
-    }
-    Outputs: xavi2.exe
-    Flags {
-        -lstdc++exp
-    }
+Config: test {
+    InputFiles: test/test.cpp src/parser.cpp
+    Output: Test.exe
+    Includes: include
 }
