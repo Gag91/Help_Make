@@ -1,8 +1,29 @@
 #pragma once
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <string>
 #include <vector>
+
+struct Config {
+    std::string name;
+    std::string compiler;
+    std::string version;
+    std::string output;
+    std::string flags;
+    std::string inputFile;
+    std::string includes;
+    std::string modules;
+
+    std::vector<std::string> preBuild;
+    std::vector<std::string> postBuild;
+    std::vector<std::string> github;
+    std::vector<std::string> includeFiles;
+    std::vector<std::string> v_inputFiles;
+    std::vector<std::string> v_Flags;
+
+    bool run = false;
+};
 
 class Parser {
   private:
@@ -23,12 +44,14 @@ class Parser {
     bool isModulesSet = false;
     bool isPreBuildSet = false;
     bool isPostBuildSet = false;
+    bool isConfigSet = false;
     bool verbose = false;
     bool debug = false;
     bool run = false;
     bool n_file = false;
     bool buildSere = false;
     bool create = false;
+    bool allCfgs = false;
 
     std::vector<std::string> includeFiles;
     std::vector<std::string> v_inputFiles;
@@ -38,15 +61,20 @@ class Parser {
     std::vector<std::string> v_Postcmd;
     std::vector<std::string> v_Precmd;
 
+    Config currentConfig;
+    std::map<std::string, Config> configs;
+    int configBraceDepth = 1;
+
   public:
     Parser(std::filesystem::path file, std::string inputFile, std::string comp, std::string ver,
-           std::string out, std::string flg, bool verbose, bool run, bool debug, bool n_file, bool buildSere, bool create)
+           std::string out, std::string flg, bool verbose, bool run, bool debug, bool n_file, bool buildSere, bool create, bool allCfgs)
         : filename(file), inputFile(inputFile), compiler(comp), version(ver), output(out), flags(flg),
-          verbose(verbose), run(run), debug(debug), n_file(n_file), buildSere(buildSere), create(create) {}
+          verbose(verbose), run(run), debug(debug), n_file(n_file), buildSere(buildSere), create(create), allCfgs(allCfgs) {}
 
     void parse();
     void execute();
     void buildCommand();
+    void executeConfigs(const std::vector<std::string> &names);
 
     std::vector<std::string> getInputFile();
     std::vector<std::string> getInclude();
@@ -54,6 +82,7 @@ class Parser {
     std::vector<std::string> getModules();
     std::vector<std::string> getGithub();
 
+    std::string processGithubEntry(const std::string &value);
     std::string getCompiler();
     std::string getOutput();
     std::string getVersion();

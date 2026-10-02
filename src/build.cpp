@@ -13,69 +13,72 @@ class Build {
   public:
     Build() = default;
     void help() const {
-        std::cout << "Help_Make (hm) - Build System\n";
-        std::cout << "Use : hm [options]\n\n";
+        std::string help = R"(Help_Make (hm) - Build System
+Use : hm [options]
 
-        std::cout << "Options:\n";
-        std::cout << "  -h, --help     Output this help message\n";
-        std::cout << "  -v, --version  Output the program version\n";
-        std::cout << "  -b, --build    Build using HelpMake.txt\n";
-        std::cout << "  -l, --license  Output the license information\n";
-        std::cout << "  -f, --file     Specify a custom HelpMake file\n";
-        std::cout << "      --show     Show current configuration\n";
-        std::cout << "      --dump     Print raw HelpMake.txt contents\n";
-        std::cout << "      --create   Generate HelpMake.txt from build arguments\n\n";
+Options:
+  -h, --help     Output this help message
+  -v, --version  Output the program version
+  -b, --build    Build using HelpMake.txt
+  -l, --license  Output the license information
+  -f, --file     Specify a custom HelpMake file
+      --show     Show current configuration
+      --dump     Print raw HelpMake.txt contents
+      --create   Generate HelpMake.txt from build arguments
 
-        std::cout << "Build Options (use with -b):\n";
-        std::cout << "  -Gcc           Use GNU Compiler Collection\n";
-        std::cout << "  -Clang         Use LLVM Clang Compiler\n";
-        std::cout << "  -MSVC          Use Microsoft Visual C++ Compiler, Windows only\n";
-        std::cout << "  -Zig           Use Zig Compiler (C/C++ support)\n";
-        std::cout << "  -Sere          Use Sere Compiler\n\n";
+Build Options (use with -b):
+  -Gcc           Use GNU Compiler Collection
+  -Clang         Use LLVM Clang Compiler
+  -MSVC          Use Microsoft Visual C++ Compiler, Windows only
+  -Zig           Use Zig Compiler (C/C++ support)
+  -Sere          Use Sere Compiler
 
-        std::cout << "Build Flags:\n";
-        std::cout << "  -I<path>       Include a specified directory\n";
-        std::cout << "  -L<path>       Link a specified library path\n";
-        std::cout << "  -F<flags>      Add specified compiler flags\n";
-        std::cout << "  -o<file>       Set output filename\n";
-        std::cout << "  -r, --run      Run output file after compilation\n";
-        std::cout << "      --nofile   Build from command line only (no config file)\n";
-        std::cout << "      --verbose  Show detailed build output\n";
-        std::cout << "      --debug    Show debug information\n\n";
+Build Flags:
+  -I<path>       Include a specified directory
+  -L<path>       Link a specified library path
+  -F<flags>      Add specified compiler flags
+  -o<file>       Set output filename
+  -r, --run      Run output file after compilation
+      --nofile   Build from command line only (no config file)
+      --verbose  Show detailed build output
+      --debug    Show debug information
 
-        std::cout << "Available Versions:\n";
-        std::cout << "  -std=c++98\n";
-        std::cout << "  -std=c++11\n";
-        std::cout << "  -std=c++14\n";
-        std::cout << "  -std=c++17\n";
-        std::cout << "  -std=c++20\n";
-        std::cout << "  -std=c++23\n";
-        std::cout << "  -std=c++26\n\n";
+Available Versions:
+  -std=c++98
+  -std=c++11
+  -std=c++14
+  -std=c++17
+  -std=c++20
+  -std=c++23
+  -std=c++26
 
-        std::cout << "Examples:\n";
-        std::cout << "  Build from HelpMake.txt\n";
-        std::cout << "  hm -b\n\n";
+Examples:
+  Build from HelpMake.txt
+    hm -b
 
-        std::cout << "  Build with a specific compiler\n";
-        std::cout << "  hm -b -clang -o main.exe\n\n";
+  Build with a specific compiler
+    hm -b -clang -o main.exe
 
-        std::cout << "  Build from command line (no config file)\n";
-        std::cout << "  hm -b --nofile -gcc main.cpp -o main.exe\n\n";
+  Build from command line (no config file)
+    hm -b --nofile -gcc main.cpp -o main.exe
 
-        std::cout << "  Generate a HelpMake.txt from arguments\n";
-        std::cout << "  hm -b -Gcc -std=c++26 -F-Wall -Iinclude src/main.cpp -o main.exe --create\n\n";
+  Generate a HelpMake.txt from arguments
+    hm -b -Gcc -std=c++26 -F-Wall -Iinclude src/main.cpp -o main.exe --create
 
-        std::cout << "  Use a custom config file\n";
-        std::cout << "  hm -b -f custom.txt\n\n";
+  Use a custom config file
+    hm -b -f custom.txt
 
-        std::cout << "  Show current config / raw file\n";
-        std::cout << "  hm --show\n";
-        std::cout << "  hm --dump\n";
+  Show current config / raw file
+    hm --show
+    hm --dump
+)";
+
+        std::cout << help << "\n";
     }
 
     void version() const {
         std::cout << "Help_Make (hm) - Build System\n";
-        std::cout << "Version: 4.0.0\n";
+        std::cout << "Version: 5.0.0\n";
         std::cout << "Author : Xavi99\n";
         std::cout << "Website: https://github.com/Xavi99/Help_Make\n";
         std::cout << "This program is licensed under the MIT License. See \"--license\" for details.\n\n";
@@ -116,12 +119,16 @@ int main(int argc, char *argv[]) {
     std::string flags = "";
     std::string inputFile = "";
     std::string filename = "HelpMake.txt";
+
     bool verbose = false;
     bool run = false;
     bool debug = false;
     bool n_file = false;
     bool sere = false;
     bool create = false;
+    bool allCfgs = false;
+
+    std::vector<std::string> selectedConfigs;
     Build build;
 
     if (argc < 2) {
@@ -146,7 +153,7 @@ int main(int argc, char *argv[]) {
             std::cout << file.rdbuf() << "\n";
         }
     } else if (argument == "--show") {
-        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create);
+        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs);
         parser.parse();
 
         std::cout << "Compiler: " << parser.getCompiler() << "\n";
@@ -214,10 +221,12 @@ int main(int argc, char *argv[]) {
             } else if (arg == "-sere" || arg == "-Sere") {
                 compiler = "sere";
                 sere = true;
+
             } else if (arg == "-std=c++98" || arg == "-std=c++11" || arg == "-std=c++14" ||
                        arg == "-std=c++17" || arg == "-std=c++20" || arg == "-std=c++23" ||
                        arg == "-std=c++26") {
                 version = std::string(arg).substr(1);
+
             } else if (arg == "-o" || arg == "--output") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
                     output = argv[++i];
@@ -225,8 +234,10 @@ int main(int argc, char *argv[]) {
                     hp::printlnCl("Error: Output file not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
                 }
+
             } else if (arg.rfind("-o", 0) == 0 && arg.size() > 2) {
                 output = std::string(arg).substr(2);
+
             } else if (arg == "-F" || arg == "--Flag") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
                     if (!flags.empty())
@@ -236,11 +247,13 @@ int main(int argc, char *argv[]) {
                     hp::printlnCl("Error: Additional flags not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
                 }
+
             } else if (arg.rfind("-F", 0) == 0 && arg.size() > 2) {
                 std::string n_flags = std::string(arg).substr(2);
                 if (!flags.empty())
                     flags += " ";
                 flags += n_flags;
+
             } else if (arg == "-I" || arg == "--Include") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
                     if (!flags.empty())
@@ -250,11 +263,13 @@ int main(int argc, char *argv[]) {
                     hp::printlnCl("Error: Include path not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
                 }
+
             } else if (arg.rfind("-I", 0) == 0 && arg.size() > 2) {
                 std::string includePath = std::string(arg).substr(2);
                 if (!flags.empty())
                     flags += " ";
                 flags += "-I" + includePath;
+
             } else if (arg == "-L" || arg == "--Library") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
                     if (!flags.empty())
@@ -264,11 +279,13 @@ int main(int argc, char *argv[]) {
                     hp::printlnCl("Error: Library path not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
                 }
+
             } else if (arg.rfind("-L", 0) == 0 && arg.size() > 2) {
                 std::string libPath = std::string(arg).substr(2);
                 if (!flags.empty())
                     flags += " ";
                 flags += "-L" + libPath;
+
             } else if (arg == "-f" || arg == "--file") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
                     filename = std::string(argv[++i]);
@@ -276,6 +293,20 @@ int main(int argc, char *argv[]) {
                     hp::printlnCl("Error: filename not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
                 }
+
+            } else if (arg == "--config") {
+                if (i + 1 < argc && argv[i + 1][0] != '-') {
+                    selectedConfigs.push_back(std::string(argv[++i]));
+                } else {
+                    hp::printlnCl("Error: Config name not specified after '" + std::string(arg) + "'.", hp::Color::RED);
+                    exit(EXIT_FAILURE);
+                }
+            } else if (arg.rfind("--config=", 0) == 0 && arg.size() > 9) {
+                std::string configName = std::string(arg).substr(9);
+                selectedConfigs.push_back(configName);
+
+            } else if (arg.rfind("--config-all", 0) == 0 && arg.size() > 9) {
+                allCfgs = true;
             } else if (arg.rfind("-f", 0) == 0 && arg.size() > 2) {
                 filename = std::string(arg).substr(2);
             } else if (arg == "-v" || arg == "--verbose") {
@@ -292,21 +323,21 @@ int main(int argc, char *argv[]) {
                 filename = std::string(arg) + "HelpMake.txt";
                 if (verbose)
                     std::cout << "Build file: " << filename << std::endl;
+
             } else if (arg.find(".txt") != std::string::npos && std::filesystem::is_regular_file(arg)) {
                 filename = std::string(arg);
                 if (verbose)
                     std::cout << "Build file: " << filename << std::endl;
+
             } else if (std::filesystem::is_directory(arg)) {
                 filename = std::string(arg) + "/HelpMake.txt";
                 if (verbose)
                     std::cout << "Build file: " << filename << std::endl;
+
             } else if (arg.rfind("-", 0) != 0) {
                 if (!inputFile.empty())
                     inputFile += " ";
                 inputFile += std::string(arg);
-            } else {
-                hp::printlnCl("Error: Unknown argument: " + std::string(arg), hp::Color::RED);
-                exit(EXIT_FAILURE);
             }
         }
 
@@ -318,10 +349,17 @@ int main(int argc, char *argv[]) {
         }
 
         if (std::filesystem::exists(filename) && !n_file && !create) {
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs);
             parser.parse();
-            if (!create)
-                parser.execute();
+            if (!create) {
+                parser.executeConfigs(selectedConfigs);
+                if (!selectedConfigs.empty() && allCfgs) {
+                    hp::printlnCl("Warning: Both --config and --config-all specified. Ignoring --config.", hp::Color::YELLOW);
+                }
+                if (selectedConfigs.empty()) {
+                    parser.execute();
+                }
+            }
         } else {
             if (!n_file && !create) {
                 hp::printlnCl("Build file not found: " + filename, hp::Color::YELLOW);
@@ -351,7 +389,7 @@ int main(int argc, char *argv[]) {
                 hp::printlnCl("Warning: No output file specified. Using default: " + d_output, hp::Color::YELLOW);
             }
 
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs);
             parser.parse();
             if (!create)
                 parser.execute();
