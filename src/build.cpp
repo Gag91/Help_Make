@@ -12,7 +12,7 @@ class Build {
   public:
     Build() = default;
     void help() const {
-        std::string help = R"(Help_Make (hm) - Build System
+        constexpr std::string_view help = R"(Help_Make (hm) - Build System
 Use : hm [options]
 
 Options:
@@ -85,7 +85,7 @@ Examples:
     void license(hp::BorderStyle style) const {
         hp::BorderChars chars = hp::getBorderChars(style);
         std::cout << "Help_Make (hm) - License Information\n";
-        std::string license = R"(MIT License
+        constexpr std::string_view license = R"(MIT License
 
 Copyright (c) 2026 Xavi99
 
