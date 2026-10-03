@@ -25,6 +25,7 @@ Options:
       --show     Show current configuration
       --dump     Print raw HelpMake.txt contents
       --create   Generate HelpMake.txt from build arguments
+      --clean    Delete build artifacts
 
 Build Options (use with -b):
   -Gcc           Use GNU Compiler Collection
@@ -32,6 +33,8 @@ Build Options (use with -b):
   -MSVC          Use Microsoft Visual C++ Compiler, Windows only
   -Zig           Use Zig Compiler (C/C++ support)
   -Sere          Use Sere Compiler
+  -C=<compiler>  Use any compiler (e.g., -C=gcc, -C=python)
+  -V=<version>   Use any version (e.g., -V=std=c99)
 
 Build Flags:
   -I<path>       Include a specified directory
@@ -39,18 +42,29 @@ Build Flags:
   -F<flags>      Add specified compiler flags
   -o<file>       Set output filename
   -r, --run      Run output file after compilation
+      --config   Build a specific config from HelpMake.txt
       --nofile   Build from command line only (no config file)
       --verbose  Show detailed build output
       --debug    Show debug information
+      --rebuild  Force full rebuild (ignore timestamps)
+      --json     Generate compile_commands.json
+      --no-sep   Disable incremental build (one-shot compile)
+      --clean    Clean build (delete build/HelpMake directory)
 
-Available Versions:
-  -std=c++98
-  -std=c++11
-  -std=c++14
-  -std=c++17
-  -std=c++20
-  -std=c++23
-  -std=c++26
+Config Blocks:
+  Define multiple build configs in HelpMake.txt:
+    Config: debug {
+        Version: std=c++20
+        Flags:   -g -O0 -DDEBUG
+        Output:  build/debug.exe
+    }
+    Config: release {
+        Flags:   -O3 -DNDEBUG
+        Output:  build/release.exe
+    }
+  Then build with:
+    hm -b --config debug
+    hm -b --config release
 
 Examples:
   Build from HelpMake.txt
@@ -59,14 +73,23 @@ Examples:
   Build with a specific compiler
     hm -b -clang -o main.exe
 
+  Build a config
+    hm -b --config release
+
   Build from command line (no config file)
     hm -b --nofile -gcc main.cpp -o main.exe
+
+  Build C code (any language works)
+    hm -b --nofile -C=gcc -V=std=c99 main.c -o main.exe
 
   Generate a HelpMake.txt from arguments
     hm -b -Gcc -std=c++26 -F-Wall -Iinclude src/main.cpp -o main.exe --create
 
   Use a custom config file
     hm -b -f custom.txt
+
+  Clean build artifacts
+    hm --clean
 
   Show current config / raw file
     hm --show
@@ -77,11 +100,13 @@ Examples:
     }
 
     void version() const {
-        std::cout << "Help_Make (hm) - Build System\n";
-        std::cout << "Version: 5.0.0\n";
-        std::cout << "Author : Xavi99\n";
-        std::cout << "Website: https://github.com/Xavi99/Help_Make\n";
-        std::cout << "This program is licensed under the MIT License. See \"--license\" for details.\n\n";
+        constexpr std::string_view version = R"(Help_Make (hm) - Build System
+Version: 7.5.0
+Author : Xavi99
+Website: https://github.com/Gag91/Help_Make
+This program is licensed under the MIT License. See "--license" for details.
+)";
+        std::cout << version << "\n";
     }
     void license(hp::BorderStyle style) const {
         hp::BorderChars chars = hp::getBorderChars(style);
