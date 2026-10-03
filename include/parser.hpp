@@ -54,6 +54,7 @@ class Parser {
     bool allCfgs = false;
     bool json = false;
     bool seperate = true;
+    bool rebuild = false;
 
     std::vector<std::string> includeFiles;
     std::vector<std::string> v_inputFiles;
@@ -70,9 +71,9 @@ class Parser {
 
   public:
     Parser(std::filesystem::path file, std::string inputFile, std::string comp, std::string ver,
-           std::string out, std::string flg, bool verbose, bool run, bool debug, bool n_file, bool buildSere, bool create, bool allCfgs, bool json, bool seperate)
+           std::string out, std::string flg, bool verbose, bool run, bool debug, bool n_file, bool buildSere, bool create, bool allCfgs, bool json, bool seperate, bool rebuild)
         : filename(file), inputFile(inputFile), compiler(comp), version(ver), output(out), flags(flg),
-          verbose(verbose), run(run), debug(debug), n_file(n_file), buildSere(buildSere), create(create), allCfgs(allCfgs), json(json), seperate(seperate) {}
+          verbose(verbose), run(run), debug(debug), n_file(n_file), buildSere(buildSere), create(create), allCfgs(allCfgs), json(json), seperate(seperate), rebuild(rebuild) {}
 
     void parse();
     void execute();

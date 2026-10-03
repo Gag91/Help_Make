@@ -128,6 +128,7 @@ int main(int argc, char *argv[]) {
     bool allCfgs = false;
     bool json = false;
     bool seperate = true;
+    bool rebuild = false;
 
     std::vector<std::string> selectedConfigs;
     Build build;
@@ -157,7 +158,7 @@ int main(int argc, char *argv[]) {
         std::filesystem::remove_all("build/HelpMake");
         hp::printlnCl("[HelpMake] Cleaned build/HelpMake directory.", hp::Color::GREEN);
     } else if (argument == "--show") {
-        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate);
+        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate, rebuild);
         parser.parse();
 
         std::cout << "Compiler: " << parser.getCompiler() << "\n";
@@ -357,7 +358,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (std::filesystem::exists(filename) && !n_file && !create) {
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate, rebuild);
             parser.parse();
             if (!create) {
                 parser.executeConfigs(selectedConfigs);
@@ -397,7 +398,7 @@ int main(int argc, char *argv[]) {
                 hp::printlnCl("Warning: No output file specified. Using default: " + d_output, hp::Color::YELLOW);
             }
 
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate, rebuild);
             parser.parse();
             if (!create)
                 parser.execute();

@@ -885,6 +885,8 @@ void Parser::generateCompileCommands() {
 }
 
 bool Parser::needsRebuild(const std::string &src, const std::string &obj) {
+    if (rebuild)
+        return true;
     if (!std::filesystem::exists(obj))
         return true;
 
