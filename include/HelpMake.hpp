@@ -9,7 +9,6 @@
 #include <vector>
 
 namespace hp {
-    class HelpMake;
 
     template <typename T>
     concept StringLike = std::convertible_to<T, std::string>;
@@ -17,38 +16,7 @@ namespace hp {
     class HelpMake {
       private:
         std::filesystem::path filename;
-        std::string compiler;
-        std::string version;
-        std::string output;
-        std::string flags;
-        std::string inputFile;
-        std::string modules;
-        std::string Precmd;
-        std::string Postcmd;
-
-        bool isInputFileSet = false;
-        bool isIncludeSet = false;
-        bool isFetchSet = false;
-        bool isFlagsSet = false;
-        bool isModulesSet = false;
-        bool isPreBuildSet = false;
-        bool isPostBuildSet = false;
-        bool isConfigSet = false;
-        bool verbose = false;
-        bool debug = false;
-        bool run = false;
-        bool n_file = false;
-        bool buildSere = false;
-        bool create = false;
-        bool allCfgs = false;
-
-        std::vector<std::string> includeFiles;
-        std::vector<std::string> v_inputFiles;
-        std::vector<std::string> v_Flags;
-        std::vector<std::string> v_Modules;
-        std::vector<std::string> v_Github;
-        std::vector<std::string> v_Postcmd;
-        std::vector<std::string> v_Precmd;
+        Config cfg;
 
         static std::string joinVec(const std::vector<std::string> &v) {
             std::string result;
@@ -65,7 +33,7 @@ namespace hp {
 
         template <StringLike T>
         HelpMake &setCompiler(T &&v) {
-            compiler = std::string(std::forward<T>(v));
+            cfg.compiler = std::string(std::forward<T>(v));
             return *this;
         }
 
@@ -74,7 +42,7 @@ namespace hp {
             std::string s = std::string(std::forward<T>(v));
             if (s.rfind("std=", 0) != 0)
                 s = "std=" + s;
-            version = s;
+            cfg.version = s;
             return *this;
         }
 
@@ -85,42 +53,37 @@ namespace hp {
 
         template <StringLike T>
         HelpMake &setOutput(T &&v) {
-            output = std::string(std::forward<T>(v));
+            cfg.output = std::string(std::forward<T>(v));
             return *this;
         }
 
         template <StringLike T>
         HelpMake &setFlags(T &&v) {
-            flags = std::string(std::forward<T>(v));
-            isFlagsSet = true;
+            cfg.flags = std::string(std::forward<T>(v));
             return *this;
         }
 
         template <StringLike T>
         HelpMake &setInputFile(T &&v) {
-            inputFile = std::string(std::forward<T>(v));
-            isInputFileSet = true;
+            cfg.inputFile = std::string(std::forward<T>(v));
             return *this;
         }
 
         template <StringLike T>
         HelpMake &setModules(T &&v) {
-            modules = std::string(std::forward<T>(v));
-            isModulesSet = true;
+            cfg.modules = std::string(std::forward<T>(v));
             return *this;
         }
 
         template <StringLike T>
         HelpMake &setPrecmd(T &&v) {
-            Precmd = std::string(std::forward<T>(v));
-            isPreBuildSet = true;
+            cfg.Precmd = std::string(std::forward<T>(v));
             return *this;
         }
 
         template <StringLike T>
         HelpMake &setPostcmd(T &&v) {
-            Postcmd = std::string(std::forward<T>(v));
-            isPostBuildSet = true;
+            cfg.Postcmd = std::string(std::forward<T>(v));
             return *this;
         }
 
@@ -132,208 +95,202 @@ namespace hp {
         }
 
         HelpMake &addInputFile(const std::string &f) {
-            v_inputFiles.push_back(f);
-            isInputFileSet = true;
+            cfg.v_inputFiles.push_back(f);
             return *this;
         }
 
         HelpMake &addFlag(const std::string &f) {
-            v_Flags.push_back(f);
-            isFlagsSet = true;
+            cfg.v_Flags.push_back(f);
             return *this;
         }
 
         HelpMake &addInclude(const std::string &i) {
-            includeFiles.push_back(i);
-            isIncludeSet = true;
+            cfg.includeFiles.push_back(i);
             return *this;
         }
 
         HelpMake &addModule(const std::string &m) {
-            v_Modules.push_back(m);
-            isModulesSet = true;
+            cfg.v_Modules.push_back(m);
             return *this;
         }
 
         HelpMake &addGithub(const std::string &repo) {
-            v_Github.push_back(repo);
-            isFetchSet = true;
+            cfg.v_Github.push_back(repo);
             return *this;
         }
 
         HelpMake &addPrecmd(const std::string &cmd) {
-            v_Precmd.push_back(cmd);
-            isPreBuildSet = true;
+            cfg.v_Precmd.push_back(cmd);
             return *this;
         }
 
         HelpMake &addPostcmd(const std::string &cmd) {
-            v_Postcmd.push_back(cmd);
-            isPostBuildSet = true;
+            cfg.v_Postcmd.push_back(cmd);
             return *this;
         }
 
         HelpMake &setIncludeFiles(std::vector<std::string> include) {
-            includeFiles = std::move(include);
-            isIncludeSet = true;
+            cfg.includeFiles = std::move(include);
             return *this;
         }
 
         HelpMake &setInputFiles(std::vector<std::string> files) {
-            if (!files.empty())
-                isInputFileSet = true;
-            v_inputFiles = std::move(files);
+            cfg.v_inputFiles = std::move(files);
             return *this;
         }
 
         HelpMake &setFlagList(std::vector<std::string> flagList) {
-            v_Flags = std::move(flagList);
-            isFlagsSet = true;
+            cfg.v_Flags = std::move(flagList);
             return *this;
         }
 
         HelpMake &setModuleList(std::vector<std::string> mods) {
-            v_Modules = std::move(mods);
-            isModulesSet = true;
+            cfg.v_Modules = std::move(mods);
             return *this;
         }
 
         HelpMake &setGithub(std::vector<std::string> repos) {
-            v_Github = std::move(repos);
-            isFetchSet = true;
+            cfg.v_Github = std::move(repos);
             return *this;
         }
 
         HelpMake &setPostcmd(std::vector<std::string> cmds) {
-            v_Postcmd = std::move(cmds);
-            isPostBuildSet = true;
+            cfg.v_Postcmd = std::move(cmds);
             return *this;
         }
 
         HelpMake &setPrecmd(std::vector<std::string> cmds) {
-            v_Precmd = std::move(cmds);
-            isPreBuildSet = true;
+            cfg.v_Precmd = std::move(cmds);
             return *this;
         }
 
         HelpMake &setVerbose(bool v = true) {
-            verbose = v;
+            cfg.verbose = v;
             return *this;
         }
 
         HelpMake &setDebug(bool v = true) {
-            debug = v;
+            cfg.debug = v;
             return *this;
         }
 
         HelpMake &setRun(bool v = true) {
-            run = v;
+            cfg.run = v;
             return *this;
         }
 
         HelpMake &setNoFile(bool v = true) {
-            n_file = v;
+            cfg.n_file = v;
             return *this;
         }
 
         HelpMake &setBuildSere(bool v = true) {
-            buildSere = v;
+            cfg.buildSere = v;
             return *this;
         }
 
         HelpMake &setCreate(bool v = true) {
-            create = v;
+            cfg.create = v;
             return *this;
         }
 
         HelpMake &setAllCfgs(bool v = true) {
-            allCfgs = v;
+            cfg.allCfgs = v;
             return *this;
         }
 
-        HelpMake &setConfig(bool v = true) {
-            isConfigSet = v;
+        HelpMake &setJson(bool v = true) {
+            cfg.json = v;
+            return *this;
+        }
+
+        HelpMake &setSeparate(bool v = true) {
+            cfg.seperate = v;
+            return *this;
+        }
+
+        HelpMake &setRebuild(bool v = true) {
+            cfg.rebuild = v;
             return *this;
         }
 
         std::string getCompiler() const {
-            return compiler;
+            return cfg.compiler;
         }
         std::string getVersion() const {
-            return version;
+            return cfg.version;
         }
         std::string getOutput() const {
-            return output;
+            return cfg.output;
         }
         std::string getFlags() const {
-            return flags;
+            return cfg.flags;
         }
         std::string getInputFile() const {
-            return inputFile;
+            return cfg.inputFile;
         }
         const std::vector<std::string> &getInputFiles() const {
-            return v_inputFiles;
+            return cfg.v_inputFiles;
         }
         const std::vector<std::string> &getFlagList() const {
-            return v_Flags;
+            return cfg.v_Flags;
         }
         const std::vector<std::string> &getIncludeFiles() const {
-            return includeFiles;
+            return cfg.includeFiles;
         }
         const std::vector<std::string> &getModules() const {
-            return v_Modules;
+            return cfg.v_Modules;
         }
         const std::vector<std::string> &getGithub() const {
-            return v_Github;
+            return cfg.v_Github;
         }
 
         void build() {
             if (filename.empty())
                 filename = "HelpMake.txt";
 
-            std::string joinedInputs = joinVec(v_inputFiles);
+            std::string joinedInputs = joinVec(cfg.v_inputFiles);
             if (!joinedInputs.empty())
-                inputFile = joinedInputs;
+                cfg.inputFile = joinedInputs;
 
-            std::string joinedFlags = joinVec(v_Flags);
+            std::string joinedFlags = joinVec(cfg.v_Flags);
             if (!joinedFlags.empty()) {
-                if (!flags.empty()) {
-                    flags += " " + joinedFlags;
+                if (!cfg.flags.empty()) {
+                    cfg.flags += " " + joinedFlags;
                 } else {
-                    flags = joinedFlags;
+                    cfg.flags = joinedFlags;
                 }
             }
 
-            std::string joinedModules = joinVec(v_Modules);
+            std::string joinedModules = joinVec(cfg.v_Modules);
             if (!joinedModules.empty()) {
-                if (!modules.empty())
-                    modules += " " + joinedModules;
+                if (!cfg.modules.empty())
+                    cfg.modules += " " + joinedModules;
                 else
-                    modules = joinedModules;
+                    cfg.modules = joinedModules;
             }
 
-            for (const auto &inc : includeFiles)
-                flags += " -I" + inc;
+            for (const auto &inc : cfg.includeFiles)
+                cfg.flags += " -I" + inc;
 
-            if (!v_Precmd.empty())
-                Precmd = joinVec(v_Precmd);
+            if (!cfg.v_Precmd.empty())
+                cfg.Precmd = joinVec(cfg.v_Precmd);
 
-            if (!v_Postcmd.empty())
-                Postcmd = joinVec(v_Postcmd);
+            if (!cfg.v_Postcmd.empty())
+                cfg.Postcmd = joinVec(cfg.v_Postcmd);
 
-            Parser parser(filename, inputFile, compiler, version, output, flags,
-                          verbose, run, debug, n_file, buildSere, create, allCfgs);
+            Parser parser(filename, cfg);
             parser.parse();
-            if (!create) {
+            if (!cfg.create) {
                 parser.executeConfigs({});
-                if (!isConfigSet && !allCfgs) {
+                if (!cfg.allCfgs) {
                     parser.execute();
                 }
             }
         }
 
         void buildAndRun() {
-            run = true;
+            cfg.run = true;
             build();
         }
 
@@ -341,8 +298,7 @@ namespace hp {
             if (filename.empty())
                 filename = "HelpMake.txt";
 
-            Parser parser(filename, inputFile, compiler, version, output, flags,
-                          verbose, run, debug, n_file, buildSere, create, allCfgs);
+            Parser parser(filename, cfg);
             parser.parse();
             parser.executeConfigs({name});
         }

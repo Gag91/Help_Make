@@ -48,26 +48,26 @@ static std::string compilerCommand(const std::string &compiler) {
         return "zig c++";
     if (compiler == "sere")
         return "sere";
-    return "";
+    return compiler;
 }
 
 void Parser::parse() {
 
-    if (create) {
+    if (cfg.create) {
         hp::File file;
 
-        std::istringstream issInput(inputFile);
+        std::istringstream issInput(cfg.inputFile);
         std::string token;
         while (issInput >> token)
-            v_inputFiles.push_back(token);
+            cfg.v_inputFiles.push_back(token);
 
-        std::istringstream issFlags(flags);
+        std::istringstream issFlags(cfg.flags);
         while (issFlags >> token)
-            v_Flags.push_back(token);
+            cfg.v_Flags.push_back(token);
 
-        std::istringstream issModules(modules);
+        std::istringstream issModules(cfg.modules);
         while (issModules >> token)
-            v_Modules.push_back(token);
+            cfg.v_Modules.push_back(token);
 
         if (file.exists(filename.string())) {
             hp::printlnCl(std::format("Warning: {} already exists. Overwrite? (y/n)", filename.string()), hp::Color::YELLOW);
@@ -78,41 +78,41 @@ void Parser::parse() {
             }
         }
 
-        hp::save(filename.string(), {{"Compiler", compiler}, {"Version", version}, {"Output", output}});
+        hp::save(filename.string(), {{"Compiler", cfg.compiler}, {"Version", cfg.version}, {"Output", cfg.output}});
         std::ofstream make(filename.string(), std::ios::app);
 
         make << "\nInputFiles {\n";
-        for (const auto &input : v_inputFiles)
+        for (const auto &input : cfg.v_inputFiles)
             make << "    " << input << "\n";
         make << "}\n";
 
-        if (!v_Flags.empty()) {
+        if (!cfg.v_Flags.empty()) {
             make << "\nFlags {\n";
-            for (const auto &f : v_Flags)
+            for (const auto &f : cfg.v_Flags)
                 make << "    " << f << "\n";
             make << "}\n";
         }
-        if (!v_Github.empty()) {
+        if (!cfg.v_Github.empty()) {
             make << "\nGithub {\n";
-            for (const auto &g : v_Github)
+            for (const auto &g : cfg.v_Github)
                 make << "    " << g << "\n";
             make << "}\n";
         }
-        if (!v_Modules.empty()) {
+        if (!cfg.v_Modules.empty()) {
             make << "\nModules {\n";
-            for (const auto &m : v_Modules)
+            for (const auto &m : cfg.v_Modules)
                 make << "    " << m << "\n";
             make << "}\n";
         }
-        if (!v_Precmd.empty()) {
+        if (!cfg.v_Precmd.empty()) {
             make << "\nPreBuild {\n";
-            for (const auto &cmd : v_Precmd)
+            for (const auto &cmd : cfg.v_Precmd)
                 make << "    " << cmd << "\n";
             make << "}\n";
         }
-        if (!v_Postcmd.empty()) {
+        if (!cfg.v_Postcmd.empty()) {
             make << "\nPostBuild {\n";
-            for (const auto &cmd : v_Postcmd)
+            for (const auto &cmd : cfg.v_Postcmd)
                 make << "    " << cmd << "\n";
             make << "}\n";
         }
@@ -122,15 +122,15 @@ void Parser::parse() {
         return;
     }
 
-    if (buildSere || compiler == "sere") {
+    if (cfg.buildSere || cfg.compiler == "sere") {
         execute();
         return;
     }
 
-    if (!n_file && verbose)
+    if (!cfg.n_file && cfg.verbose)
         std::cout << std::format("[HelpMake] Trying to open file: {}\n", filename.string());
 
-    if (n_file) {
+    if (cfg.n_file) {
         buildCommand();
         return;
     }
@@ -161,12 +161,12 @@ void Parser::parse() {
 
             if (configBraceDepth <= 0) {
                 configs[currentConfig.name] = currentConfig;
-                if (verbose)
+                if (cfg.verbose)
                     std::cout << std::format("Saved Config: '{}'\n", currentConfig.name);
                 isConfigSet = false;
                 currentConfig = Config{};
                 currentBlock.clear();
-                if (allCfgs)
+                if (cfg.allCfgs)
                     executeConfigs({configs.rbegin()->first});
                 continue;
             }
@@ -249,19 +249,19 @@ void Parser::parse() {
             if (line.find("Compiler:") != std::string::npos) {
                 value = extractValue(line, "Compiler:");
                 currentConfig.compiler = value;
-                if (verbose)
+                if (cfg.verbose)
                     std::cout << std::format("Compiler found in config '{}': '{}'\n", currentConfig.name, value);
 
             } else if (line.find("Version:") != std::string::npos) {
                 value = extractValue(line, "Version:");
                 currentConfig.version = value;
-                if (verbose)
+                if (cfg.verbose)
                     std::cout << std::format("Version found in config '{}': '{}'\n", currentConfig.name, value);
 
             } else if (line.find("Output:") != std::string::npos) {
                 value = extractValue(line, "Output:");
                 currentConfig.output = value;
-                if (verbose)
+                if (cfg.verbose)
                     std::cout << std::format("Output found in config '{}': '{}'\n", currentConfig.name, value);
 
             } else if (line.find("Flags:") != std::string::npos) {
@@ -271,7 +271,7 @@ void Parser::parse() {
                 else
                     currentConfig.flags += " " + value;
                 currentConfig.v_Flags.push_back(value);
-                if (verbose)
+                if (cfg.verbose)
                     std::cout << std::format("Flag found in config '{}': '{}'\n", currentConfig.name, value);
 
             } else if (line.find("InputFiles:") != std::string::npos) {
@@ -281,7 +281,7 @@ void Parser::parse() {
                 else
                     currentConfig.inputFile += " " + value;
                 currentConfig.v_inputFiles.push_back(value);
-                if (verbose)
+                if (cfg.verbose)
                     std::cout << std::format("Input file found in config '{}': '{}'\n", currentConfig.name, value);
 
             } else if (line.find("Includes:") != std::string::npos) {
@@ -291,12 +291,12 @@ void Parser::parse() {
                 else
                     currentConfig.includes += " " + value;
                 currentConfig.includeFiles.push_back(value);
-                if (verbose)
+                if (cfg.verbose)
                     std::cout << std::format("Include file found in config '{}': '{}'\n", currentConfig.name, value);
 
             } else if (line.find("Run:") != std::string::npos) {
                 currentConfig.run = true;
-                if (verbose)
+                if (cfg.verbose)
                     std::cout << std::format("Run command found in config '{}'\n", currentConfig.name);
             }
             continue;
@@ -304,52 +304,47 @@ void Parser::parse() {
 
         if (line.find("Compiler:") != std::string::npos) {
             std::string value = extractValue(line, "Compiler:");
-            if (compiler.empty())
-                compiler = value;
+            if (cfg.compiler.empty())
+                cfg.compiler = value;
 
-            if (compiler.empty()) {
+            if (cfg.compiler.empty()) {
                 hp::printlnCl("Error: Compiler not specified in the file.", hp::Color::RED);
                 exit(EXIT_FAILURE);
             }
-            if (compiler != "gcc" && compiler != "clang" && compiler != "msvc" && compiler != "zig" && compiler != "sere") {
-                hp::printlnCl(std::format("Error: Unsupported compiler specified: {}", compiler), hp::Color::RED);
-                hp::printlnCl("Supported compilers are: gcc, clang, msvc, zig and sere.", hp::Color::YELLOW);
-                exit(EXIT_FAILURE);
-            }
 
-            if (verbose)
-                std::cout << std::format("Founded Compiler: '{}'\n", compiler);
+            if (cfg.verbose)
+                std::cout << std::format("Founded Compiler: '{}'\n", cfg.compiler);
         } else if (line.find("Version:") != std::string::npos) {
-            version = extractValue(line, "Version:");
-            if (version.empty()) {
+            cfg.version = extractValue(line, "Version:");
+            if (cfg.version.empty()) {
                 hp::printlnCl("Error: Version not specified in the file.", hp::Color::RED);
                 exit(EXIT_FAILURE);
             }
-            if (version != "std=c++98" && version != "std=c++11" && version != "std=c++14" &&
-                version != "std=c++17" && version != "std=c++20" && version != "std=c++23" && version != "std=c++26") {
-                hp::printlnCl(std::format("Error: Unsupported version specified: {}", version), hp::Color::RED);
+            if (cfg.version != "std=c++98" && cfg.version != "std=c++11" && cfg.version != "std=c++14" &&
+                cfg.version != "std=c++17" && cfg.version != "std=c++20" && cfg.version != "std=c++23" && cfg.version != "std=c++26") {
+                hp::printlnCl(std::format("Error: Unsupported version specified: {}", cfg.version), hp::Color::RED);
                 hp::printlnCl("Supported versions are: std=c++98, std=c++11, std=c++14, std=c++17, std=c++20, std=c++23, std=c++26.", hp::Color::YELLOW);
                 exit(EXIT_FAILURE);
             }
-            if (verbose)
-                std::cout << std::format("Founded Version: '{}'\n", version);
+            if (cfg.verbose)
+                std::cout << std::format("Founded Version: '{}'\n", cfg.version);
         } else if (line.find("Output:") != std::string::npos) {
             std::string value = extractValue(line, "Output:");
-            if (output.empty())
-                output = value;
-            if (output.empty()) {
+            if (cfg.output.empty())
+                cfg.output = value;
+            if (cfg.output.empty()) {
 #ifdef _WIN32
-                output = "a.exe";
+                cfg.output = "a.exe";
 #else
-                output = "a.out";
+                cfg.output = "a.out";
 #endif
-                hp::printlnCl(std::format("Warning: No output file specified. Using default: {}", output), hp::Color::YELLOW);
+                hp::printlnCl(std::format("Warning: No output file specified. Using default: {}", cfg.output), hp::Color::YELLOW);
             }
-            if (verbose)
-                std::cout << std::format("Founded Output: '{}'\n", output);
+            if (cfg.verbose)
+                std::cout << std::format("Founded Output: '{}'\n", cfg.output);
         } else if (line.find("InputFiles:") != std::string::npos) {
             std::string value = extractValue(line, "InputFiles:");
-            inputFile += (inputFile.empty() ? "" : " ") + value;
+            cfg.inputFile += (cfg.inputFile.empty() ? "" : " ") + value;
         } else if (line.find("InputFiles {") != std::string::npos) {
             isInputFileSet = true;
         } else if (line.find("}") != std::string::npos && isInputFileSet) {
@@ -357,50 +352,50 @@ void Parser::parse() {
         } else if (isInputFileSet) {
             std::string value = trim(line);
             if (!value.empty()) {
-                inputFile += (inputFile.empty() ? "" : " ") + value;
-                v_inputFiles.push_back(value);
-                if (verbose)
-                    std::cout << std::format("Founded Input Files: '{}'\n", inputFile);
+                cfg.inputFile += (cfg.inputFile.empty() ? "" : " ") + value;
+                cfg.v_inputFiles.push_back(value);
+                if (cfg.verbose)
+                    std::cout << std::format("Founded Input Files: '{}'\n", cfg.inputFile);
             }
 
         } else if (line.find("Includes:") != std::string::npos) {
             std::string value = extractValue(line, "Includes:");
-            flags += (flags.empty() ? "" : " ") + value;
+            cfg.flags += (cfg.flags.empty() ? "" : " ") + value;
         } else if (line.find("Includes {") != std::string::npos) {
             isIncludeSet = true;
         } else if (line.find("}") != std::string::npos && isIncludeSet) {
             isIncludeSet = false;
-            if (verbose) {
+            if (cfg.verbose) {
                 std::cout << "Founded Include Files:\n";
-                for (const auto &vec : includeFiles)
+                for (const auto &vec : cfg.includeFiles)
                     std::cout << std::format("- {}\n", vec == "." ? "[root]" : vec);
             }
 
         } else if (isIncludeSet) {
             std::string value = trim(line);
             if (!value.empty()) {
-                flags += std::format(" -I{}", value);
-                includeFiles.push_back(value);
+                cfg.flags += std::format(" -I{}", value);
+                cfg.includeFiles.push_back(value);
             }
         } else if (line.find("Flags {") != std::string::npos) {
             isFlagsSet = true;
         } else if (line.find("}") != std::string::npos && isFlagsSet) {
             isFlagsSet = false;
-            if (verbose) {
+            if (cfg.verbose) {
                 std::cout << "Founded Flags:\n";
-                for (const auto &vec : v_Flags)
+                for (const auto &vec : cfg.v_Flags)
                     std::cout << std::format("- {}\n", vec);
             }
         } else if (isFlagsSet) {
             std::string value = trim(line);
             if (!value.empty()) {
-                flags += (flags.empty() ? "" : " ") + value;
-                v_Flags.push_back(value);
+                cfg.flags += (cfg.flags.empty() ? "" : " ") + value;
+                cfg.v_Flags.push_back(value);
             }
         } else if (line.find("Flags:") != std::string::npos) {
-            flags += " " + extractValue(line, "Flags:");
-            if (verbose)
-                std::cout << std::format("Founded Flags: '{}'\n", flags);
+            cfg.flags += " " + extractValue(line, "Flags:");
+            if (cfg.verbose)
+                std::cout << std::format("Founded Flags: '{}'\n", cfg.flags);
 
         } else if (line.find("Fetch {") != std::string::npos) {
             isFetchSet = true;
@@ -413,38 +408,38 @@ void Parser::parse() {
 
             std::string path = processGithubEntry(value);
             if (!path.empty()) {
-                flags += std::format(" -I{}", path);
-                v_Github.push_back(std::format("{} -> {}", value.substr(0, value.find("->")), path));
+                cfg.flags += std::format(" -I{}", path);
+                cfg.v_Github.push_back(std::format("{} -> {}", value.substr(0, value.find("->")), path));
             }
 
         } else if (line.find("Modules:") != std::string::npos) {
             std::string value = extractValue(line, "Modules:");
-            if (modules.empty())
-                modules = value;
+            if (cfg.modules.empty())
+                cfg.modules = value;
             else
-                modules += " " + value;
-            if (verbose)
+                cfg.modules += " " + value;
+            if (cfg.verbose)
                 std::cout << std::format("Founded Modules: {}\n", value);
-            if (debug)
+            if (cfg.debug)
                 hp::printlnCl(std::format("[Debug] Compiling Modules: {}", value), hp::Color::YELLOW);
         } else if (line.find("Modules {") != std::string::npos) {
             isModulesSet = true;
         } else if (line.find("}") != std::string::npos && isModulesSet) {
             isModulesSet = false;
-            if (verbose) {
+            if (cfg.verbose) {
                 std::cout << "Founded Modules:\n";
-                for (const auto &m : v_Modules)
+                for (const auto &m : cfg.v_Modules)
                     std::cout << std::format("- {}\n", m);
             }
 
         } else if (isModulesSet) {
             std::string value = trim(line);
             if (!value.empty()) {
-                if (modules.empty())
-                    modules = value;
+                if (cfg.modules.empty())
+                    cfg.modules = value;
                 else
-                    modules += " " + value;
-                v_Modules.push_back(value);
+                    cfg.modules += " " + value;
+                cfg.v_Modules.push_back(value);
             }
         } else if (line.find("PreBuild {") != std::string::npos) {
             isPreBuildSet = true;
@@ -453,13 +448,13 @@ void Parser::parse() {
         } else if (isPreBuildSet) {
             std::string value = trim(line);
             if (!value.empty()) {
-                if (Precmd.empty())
-                    Precmd = value;
+                if (cfg.Precmd.empty())
+                    cfg.Precmd = value;
                 else
-                    Precmd += " && " + value;
-                if (verbose)
+                    cfg.Precmd += " && " + value;
+                if (cfg.verbose)
                     std::cout << std::format("Pre-build command: {}\n", value);
-                v_Precmd.push_back(value);
+                cfg.v_Precmd.push_back(value);
             }
         } else if (line.find("PostBuild {") != std::string::npos) {
             isPostBuildSet = true;
@@ -468,13 +463,13 @@ void Parser::parse() {
         } else if (isPostBuildSet) {
             std::string value = trim(line);
             if (!value.empty()) {
-                if (Postcmd.empty())
-                    Postcmd = value;
+                if (cfg.Postcmd.empty())
+                    cfg.Postcmd = value;
                 else
-                    Postcmd += " && " + value;
-                if (verbose)
+                    cfg.Postcmd += " && " + value;
+                if (cfg.verbose)
                     std::cout << std::format("Post-build command: {}\n", value);
-                v_Postcmd.push_back(value);
+                cfg.v_Postcmd.push_back(value);
             }
         } else if (line.find("Config:") != std::string::npos) {
             std::string rest = line.substr(line.find("Config:") + 7);
@@ -492,50 +487,50 @@ void Parser::parse() {
             currentConfig = Config{};
             currentConfig.name = name;
             configBraceDepth = 1;
-            if (verbose)
+            if (cfg.verbose)
                 std::cout << std::format("\nFounded Config: '{}'\n", name);
         }
     }
 
     file.close();
 
-    if (compiler.empty()) {
+    if (cfg.compiler.empty()) {
         hp::printlnCl("Error: Compiler not found in the file.", hp::Color::RED);
         exit(EXIT_FAILURE);
     }
-    if (version.empty()) {
+    if (cfg.version.empty()) {
         hp::printlnCl("Version not specified in the file. Using default: std=c++20", hp::Color::YELLOW);
-        version = "std=c++20";
+        cfg.version = "std=c++20";
     }
-    if (output.empty()) {
+    if (cfg.output.empty()) {
 #ifdef _WIN32
-        output = "a.exe";
+        cfg.output = "a.exe";
 #else
-        output = "a.out";
+        cfg.output = "a.out";
 #endif
-        hp::printlnCl(std::format("Output not specified in the file. Using default: {}", output), hp::Color::YELLOW);
+        hp::printlnCl(std::format("Output not specified in the file. Using default: {}", cfg.output), hp::Color::YELLOW);
     }
-    if (inputFile.empty()) {
+    if (cfg.inputFile.empty()) {
         hp::printlnCl("Error: InputFile not found in the file.", hp::Color::RED);
         exit(EXIT_FAILURE);
     }
 }
 
 void Parser::execute() {
-    std::string comp = compilerCommand(compiler);
+    std::string comp = compilerCommand(cfg.compiler);
     if (comp.empty()) {
-        hp::printlnCl("Error: Unsupported compiler specified.", hp::Color::RED);
+        hp::printlnCl("Error: Unspecified Compiler.", hp::Color::RED);
         exit(EXIT_FAILURE);
     }
 
-    if (json) {
+    if (cfg.json) {
         Parser::generateCompileCommands();
     }
 
-    if (!Precmd.empty()) {
-        if (verbose)
-            hp::printlnCl(std::format("Running pre-build command: {}", Precmd), hp::Color::CYAN);
-        int error = std::system(Precmd.c_str());
+    if (!cfg.Precmd.empty()) {
+        if (cfg.verbose)
+            hp::printlnCl(std::format("Running pre-build command: {}", cfg.Precmd), hp::Color::CYAN);
+        int error = std::system(cfg.Precmd.c_str());
         if (error == -1) {
             hp::printlnCl("Error: Could not launch pre-build command.", hp::Color::RED);
             exit(EXIT_FAILURE);
@@ -544,24 +539,36 @@ void Parser::execute() {
             hp::printlnCl(std::format("Error: Pre-build command failed (exit code {}).", error), hp::Color::RED);
             exit(EXIT_FAILURE);
         }
-        if (verbose)
+        if (cfg.verbose)
             hp::printlnCl("Pre-build command executed successfully.", hp::Color::GREEN);
     }
 
-    std::string CommandFlags = version;
-    if (!modules.empty())
-        CommandFlags += " " + modules;
-    if (!flags.empty())
-        CommandFlags += " " + flags;
+    std::string r_logDir = "build/HelpMake/logs/raw";
+    std::string logDir = "build/HelpMake/logs";
+    std::filesystem::create_directories(r_logDir);
+
+    std::size_t dotPos = cfg.output.find_last_of('.');
+    std::string baseName = (dotPos != std::string::npos) ? cfg.output.substr(0, dotPos) : cfg.output;
+
+    std::string r_logPath = r_logDir + "/" + baseName + ".txt";
+    std::string logPath = logDir + "/" + baseName + ".txt";
+
+    std::string CommandFlags = cfg.version;
+    if (!cfg.modules.empty())
+        CommandFlags += " " + cfg.modules;
+    if (!cfg.flags.empty())
+        CommandFlags += " " + cfg.flags;
 
     std::string displayCommand;
     int exitCode = 0;
     double elapsed = 0;
-    if (seperate) {
+    std::string command;
+    auto timer = hp::startTimer();
+    if (cfg.seperate) {
         std::filesystem::create_directories("build/HelpMake/obj");
 
         std::vector<std::string> expandedFiles;
-        for (const auto &entry : v_inputFiles) {
+        for (const auto &entry : cfg.v_inputFiles) {
             if (entry.find('*') != std::string::npos) {
                 std::filesystem::path p(entry);
                 std::string dir = p.parent_path().string();
@@ -581,79 +588,66 @@ void Parser::execute() {
             }
         }
 
-        if (debug) {
-            hp::printlnCl(std::format("[HelpMake] {} files to check:\n", expandedFiles.size()), hp::Color::YELLOW);
+        if (cfg.debug) {
+            hp::printlnCl(std::format("[HelpMake] {} files to check:", expandedFiles.size()), hp::Color::YELLOW);
             for (const auto &file : expandedFiles)
                 hp::printlnCl(std::format("- {}", file), hp::Color::YELLOW);
         }
 
         std::vector<std::string> objects;
 
-        auto timer = hp::startTimer();
         for (const auto &file : expandedFiles) {
             std::string baseName = std::filesystem::path(file).stem().string();
             std::string objPath = std::format("build/HelpMake/obj/{}.o", baseName);
 
             if (!needsRebuild(file, objPath)) {
-                if (debug)
-                    hp::printlnCl(std::format("[HelpMake] Skip (up to date): {}\n", file), hp::Color::YELLOW);
+                if (cfg.debug)
+                    hp::printlnCl(std::format("[HelpMake] Skip (up to date): {}", file), hp::Color::YELLOW);
                 objects.push_back(objPath);
                 continue;
             }
 
-            std::string objCmd = std::format("{} -{} -c \"{}\" -o \"{}\" -MMD", comp, CommandFlags, file, objPath);
+            std::string objCmd = std::format("{} -fdiagnostics-color=always -{} -c \"{}\" -o \"{}\" -MMD", comp, CommandFlags, file, objPath);
 
-            if (debug)
+            if (cfg.debug)
                 hp::printlnCl(std::format("[HelpMake] Object Command: {}", objCmd), hp::Color::YELLOW);
 
-            int r = std::system(objCmd.c_str());
-            if (r != 0)
-                exitCode = r;
+            std::string redirectCmd = std::format("{} > \"{}\" 2>&1", objCmd, r_logPath);
+            exitCode = std::system(redirectCmd.c_str());
             objects.push_back(objPath);
         }
 
         if (exitCode == 0) {
-            displayCommand = std::format("{} -{} -o {}", comp, CommandFlags, output);
+            displayCommand = std::format("{} -{} -o {}", comp, CommandFlags, cfg.output);
 
-            std::string linkCmd = comp + " -" + CommandFlags;
+            std::string linkCmd = comp + " -fdiagnostics-color=always -" + CommandFlags;
             for (const auto &obj : objects)
                 linkCmd += " \"" + obj + "\"";
-            linkCmd += " -o \"" + output + "\"";
+            linkCmd += " -o \"" + cfg.output + "\"";
 
-            if (verbose) {
+            if (cfg.verbose) {
                 std::cout << std::format("\nCommand: {}\n", displayCommand);
             }
-            if (debug)
+            if (cfg.debug)
                 hp::printlnCl(std::format("[HelpMake] Link Command: {}", linkCmd), hp::Color::YELLOW);
 
-            exitCode = std::system(linkCmd.c_str());
-            elapsed = hp::stopTimer(timer);
+            std::string redirectCmd = std::format("{} > \"{}\" 2>&1", linkCmd, r_logPath);
+            exitCode = std::system(redirectCmd.c_str());
         }
 
     } else {
-        displayCommand = std::format("{} -{} {} -o {}", comp, CommandFlags, inputFile, output);
+        displayCommand = std::format("{} -{} {} -o {}", comp, CommandFlags, cfg.inputFile, cfg.output);
 
-        std::string command = std::format("{} -fdiagnostics-color=always -{} {} -o {}",
-                                          comp, CommandFlags, inputFile, output);
+        command = std::format("{} -fdiagnostics-color=always -{} {} -o {}",
+                              comp, CommandFlags, cfg.inputFile, cfg.output);
 
-        if (debug)
+        if (cfg.debug)
             hp::printlnCl(std::format("[HelpMake] Real Command: {}", command), hp::Color::YELLOW);
 
-        exitCode = std::system(command.c_str());
+        std::string redirectCmd = std::format("{} > \"{}\" 2>&1", command, r_logPath);
+        exitCode = std::system(redirectCmd.c_str());
     }
-
-    std::string r_logDir = "build/HelpMake/logs/raw";
-    std::string logDir = "build/HelpMake/logs";
-    std::filesystem::create_directories(r_logDir);
-
-    std::size_t dotPos = output.find_last_of('.');
-    std::string baseName = (dotPos != std::string::npos) ? output.substr(0, dotPos) : output;
-
-    std::string r_logPath = r_logDir + "/" + baseName + ".txt";
-    std::string logPath = logDir + "/" + baseName + ".txt";
-
-    /*std::string redirectCmd = std::format("{} > \"{}\" 2>&1", command, r_logPath);*/
-    /*int exitCode = std::system(redirectCmd.c_str());*/
+    elapsed = hp::stopTimer(timer);
 
     std::string result;
     std::ifstream rawFile(r_logPath);
@@ -662,38 +656,40 @@ void Parser::execute() {
 
     std::regex ansi_pattern("\x1B\\[[0-9;]*[a-zA-Z]");
     std::string cleanLog = std::regex_replace(result, ansi_pattern, "");
-    std::ofstream cleanFile(logPath, std::ios::trunc);
-    if (cleanFile.is_open())
-        cleanFile << cleanLog;
+    {
+        std::ofstream cleanFile(logPath, std::ios::trunc);
+        if (cleanFile.is_open())
+            cleanFile << cleanLog;
+    }
 
     if (exitCode == 0) {
-        hp::printlnCl(std::format("Compilation successful. Output file: {}", output), hp::Color::GREEN);
-        if (!result.empty() && verbose)
+        hp::printlnCl(std::format("Compilation successful. Output file: {}", cfg.output), hp::Color::GREEN);
+        if (!result.empty() && cfg.verbose)
             std::cout << result << "\n";
 
-        if (!Postcmd.empty()) {
-            if (verbose)
-                hp::printlnCl(std::format("Running post-build command: {}", Postcmd), hp::Color::CYAN);
-            int Error = std::system(Postcmd.c_str());
+        if (!cfg.Postcmd.empty()) {
+            if (cfg.verbose)
+                hp::printlnCl(std::format("Running post-build command: {}", cfg.Postcmd), hp::Color::CYAN);
+            int Error = std::system(cfg.Postcmd.c_str());
             if (Error == -1)
                 hp::printlnCl("Warning: Could not launch post-build command.", hp::Color::YELLOW);
             else if (Error != 0)
                 hp::printlnCl(std::format("Warning: Post-build command failed (exit code {}).", Error), hp::Color::YELLOW);
-            else if (verbose)
+            else if (cfg.verbose)
                 hp::printlnCl("Post-build command executed successfully.", hp::Color::GREEN);
         }
     } else {
 #ifdef _WIN32
-        std::string whichCmd = std::format("where {} 2>nul", compiler == "zig" ? "zig" : comp);
+        std::string whichCmd = std::format("where {} 2>nul", cfg.compiler == "zig" ? "zig" : comp);
         std::string test = hp::command(whichCmd);
         bool missing = test.find("INFO:") != std::string::npos;
 #else
-        std::string whichCmd = std::format("which {} 2>/dev/null", compiler == "zig" ? "zig" : comp);
+        std::string whichCmd = std::format("which {} 2>/dev/null", cfg.compiler == "zig" ? "zig" : comp);
         bool missing = std::system(whichCmd.c_str()) != 0;
 #endif
 
         if (missing) {
-            hp::printlnCl(std::format("Error: {} compiler not found. Please install it and add it to PATH.", compiler), hp::Color::RED);
+            hp::printlnCl(std::format("Error: {} compiler not found. Please install it and add it to PATH.", cfg.compiler), hp::Color::RED);
         } else {
             if (!cleanLog.empty())
                 std::cout << result << "\n";
@@ -703,38 +699,34 @@ void Parser::execute() {
         exit(EXIT_FAILURE);
     }
 
-    if (verbose)
+    if (cfg.verbose)
         std::cout << std::format("Compiling time: {}s\n", elapsed);
 }
 
 void Parser::buildCommand() {
-    if (compiler.empty()) {
+    if (cfg.compiler.empty()) {
         hp::printlnCl("Error: No compiler specified.", hp::Color::RED);
         exit(EXIT_FAILURE);
     }
-    if (inputFile.empty()) {
+    if (cfg.inputFile.empty()) {
         hp::printlnCl("Error: No input files specified.", hp::Color::RED);
         exit(EXIT_FAILURE);
     }
-    if (output.empty()) {
+    if (cfg.output.empty()) {
         hp::printlnCl("Warning: No output specified. Using a.exe", hp::Color::YELLOW);
-        output = "a.exe";
-    }
-    if (version.empty() && compiler != "sere") {
-        version = "std=c++20";
-        hp::printlnCl("No version specified, using default: C++20", hp::Color::YELLOW);
+        cfg.output = "a.exe";
     }
 
-    if (verbose) {
-        std::cout << std::format("Compiler:    {}{}\n", hp::getColorCode(hp::YELLOW), compiler)
+    if (cfg.verbose) {
+        std::cout << std::format("Compiler:    {}{}\n", hp::getColorCode(hp::YELLOW), cfg.compiler)
                   << hp::getColorCode(hp::RESET);
-        std::cout << std::format("Version:     {}{}\n", hp::getColorCode(hp::YELLOW), version)
+        std::cout << std::format("Version:     {}{}\n", hp::getColorCode(hp::YELLOW), cfg.version)
                   << hp::getColorCode(hp::RESET);
-        std::cout << std::format("Input Files: {}{}\n", hp::getColorCode(hp::YELLOW), inputFile)
+        std::cout << std::format("Input Files: {}{}\n", hp::getColorCode(hp::YELLOW), cfg.inputFile)
                   << hp::getColorCode(hp::RESET);
-        std::cout << std::format("Output:      {}{}\n", hp::getColorCode(hp::YELLOW), output)
+        std::cout << std::format("Output:      {}{}\n", hp::getColorCode(hp::YELLOW), cfg.output)
                   << hp::getColorCode(hp::RESET);
-        std::cout << std::format("Flags:       {}{}\n", hp::getColorCode(hp::YELLOW), flags)
+        std::cout << std::format("Flags:       {}{}\n", hp::getColorCode(hp::YELLOW), cfg.flags)
                   << hp::getColorCode(hp::RESET);
     }
     execute();
@@ -745,64 +737,64 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
     for (const auto &name : names) {
         auto it = configs.find(name);
         if (it == configs.end()) {
-            if (debug)
+            if (cfg.debug)
                 hp::printlnCl(std::format("[Debug] Config name is: '{}'", name), hp::Color::YELLOW);
-            hp::printlnCl(std::format("Error: Config '{}' not found.", name), hp::Color::RED);
+            hp::printlnCl(std::format("Error: Config '{}' was either not found or is invalid.", name), hp::Color::RED);
             hp::printlnCl("Available configs:", hp::Color::YELLOW);
             for (const auto &[n, _] : configs)
                 std::cout << std::format("- {}\n", n);
             continue;
         }
 
-        Config cfg = it->second;
+        Config local = it->second;
 
-        if (cfg.compiler.empty())
-            cfg.compiler = compiler;
-        if (cfg.version.empty())
-            cfg.version = version;
-        if (cfg.output.empty())
-            cfg.output = output;
-        if (cfg.flags.empty())
-            cfg.flags = flags;
-        if (cfg.inputFile.empty())
-            cfg.inputFile = inputFile;
-        if (cfg.v_Flags.empty())
-            cfg.v_Flags = v_Flags;
-        if (cfg.v_inputFiles.empty())
-            cfg.v_inputFiles = v_inputFiles;
-        if (cfg.includeFiles.empty())
-            cfg.includeFiles = includeFiles;
+        if (local.compiler.empty())
+            local.compiler = cfg.compiler;
+        if (local.version.empty())
+            local.version = cfg.version;
+        if (local.output.empty())
+            local.output = cfg.output;
+        if (local.flags.empty())
+            local.flags = cfg.flags;
+        if (local.inputFile.empty())
+            local.inputFile = cfg.inputFile;
+        if (local.v_Flags.empty())
+            local.v_Flags = cfg.v_Flags;
+        if (local.v_inputFiles.empty())
+            local.v_inputFiles = cfg.v_inputFiles;
+        if (local.includeFiles.empty())
+            local.includeFiles = cfg.includeFiles;
 
         std::string files;
-        for (const auto &f : cfg.v_inputFiles) {
+        for (const auto &f : local.v_inputFiles) {
             if (!files.empty())
                 files += " ";
             files += f;
         }
         if (files.empty())
-            files = cfg.inputFile;
+            files = local.inputFile;
 
         std::string incFlags;
-        for (const auto &inc : cfg.includeFiles)
+        for (const auto &inc : local.includeFiles)
             incFlags += std::format(" -I{}", inc);
 
-        std::string comp = compilerCommand(cfg.compiler);
+        std::string comp = compilerCommand(local.compiler);
         if (comp.empty()) {
-            hp::printlnCl(std::format("Error: Unsupported compiler for config '{}': {}", name, cfg.compiler), hp::Color::RED);
+            hp::printlnCl(std::format("Error: Unsupported compiler '{}'", local.compiler), hp::Color::RED);
             continue;
         }
 
         hp::printlnCl(std::format("\nBuilding config: {}", name), hp::Color::CYAN);
 
         std::string command = std::format("{} -{} {} -o {} {}{}",
-                                          comp, cfg.version, files, cfg.output, cfg.flags, incFlags);
+                                          comp, local.version, files, local.output, local.flags, incFlags);
 
-        if (verbose)
+        if (cfg.verbose)
             std::cout << std::format("Command: {}\n", command);
 
         int result = std::system(command.c_str());
         if (result == 0)
-            hp::printlnCl(std::format("Config '{}' compiled successfully. Output: {}", name, cfg.output), hp::Color::GREEN);
+            hp::printlnCl(std::format("Config '{}' compiled successfully. Output: {}", name, local.output), hp::Color::GREEN);
         else
             hp::printlnCl(std::format("Config '{}' compilation failed.", name), hp::Color::RED);
     }
@@ -825,7 +817,7 @@ std::string Parser::processGithubEntry(const std::string &value) {
     if (!f.exists("build/HelpMake/dep"))
         f.create("build/HelpMake/dep");
 
-    if (verbose)
+    if (cfg.verbose)
         hp::printlnCl(std::format("\n[Help_Make] Downloading dependency '{}' ...\n", url), hp::Color::CYAN);
 
     std::size_t slash = url.find_last_of("/");
@@ -839,7 +831,7 @@ std::string Parser::processGithubEntry(const std::string &value) {
     if (!folder.empty() && folder != ".")
         fullPath += "/" + folder;
 
-    if (debug) {
+    if (cfg.debug) {
         hp::printlnCl(std::format("[Debug] Fetch Include Folder: '{}'", folder), hp::Color::YELLOW);
         hp::printlnCl(std::format("[Debug] Fetch Clone Folder: '{}'", include), hp::Color::YELLOW);
     }
@@ -855,21 +847,22 @@ void Parser::generateCompileCommands() {
     }
 
     std::string cwd = std::filesystem::current_path().generic_string();
-    std::string comp = compilerCommand(compiler);
+    std::string comp;
+    comp = compilerCommand(cfg.compiler);
 
     std::string incFlags;
-    for (const auto &inc : includeFiles)
+    for (const auto &inc : cfg.includeFiles)
         incFlags += std::format(" -I{}", inc);
 
     json << "[\n";
     bool first = true;
-    for (const auto &file : v_inputFiles) {
+    for (const auto &file : cfg.v_inputFiles) {
         if (!first)
             json << ",\n";
         first = false;
 
         std::string command = std::format("{} -{} {} -o {} {}{}",
-                                          comp, version, file, output, flags, incFlags);
+                                          comp, cfg.version, file, cfg.output, cfg.flags, incFlags);
 
         json << "  {\n";
         json << "    \"directory\": \"" << cwd << "\",\n";
@@ -880,12 +873,12 @@ void Parser::generateCompileCommands() {
     json << "\n]\n";
     json.close();
 
-    if (verbose)
+    if (cfg.verbose)
         hp::printlnCl("Generated compile_commands.json", hp::Color::GREEN);
 }
 
 bool Parser::needsRebuild(const std::string &src, const std::string &obj) {
-    if (rebuild)
+    if (cfg.rebuild)
         return true;
     if (!std::filesystem::exists(obj))
         return true;
@@ -902,7 +895,7 @@ bool Parser::needsRebuild(const std::string &src, const std::string &obj) {
     auto depTime = std::filesystem::file_time_type::min();
 
     if (srcTime > objTime) {
-        if (debug)
+        if (cfg.debug)
             hp::printlnCl(std::format("[Debug] Source file '{}' is newer than object '{}'. Rebuilding.", src, obj), hp::Color::YELLOW);
         return true;
     }
@@ -921,7 +914,7 @@ bool Parser::needsRebuild(const std::string &src, const std::string &obj) {
 
             depTime = std::filesystem::last_write_time(depFilePath);
             if (depTime > objTime) {
-                if (debug)
+                if (cfg.debug)
                     hp::printlnCl(std::format("[Debug] Dependency '{}' is newer than object '{}'. Rebuilding.", depFilePath, obj), hp::Color::YELLOW);
                 return true;
             }
@@ -932,26 +925,26 @@ bool Parser::needsRebuild(const std::string &src, const std::string &obj) {
 }
 
 std::vector<std::string> Parser::getInputFile() {
-    return v_inputFiles;
+    return cfg.v_inputFiles;
 }
 std::vector<std::string> Parser::getInclude() {
-    return includeFiles;
+    return cfg.includeFiles;
 }
 std::vector<std::string> Parser::getFlags() {
-    return v_Flags;
+    return cfg.v_Flags;
 }
 std::vector<std::string> Parser::getModules() {
-    return v_Modules;
+    return cfg.v_Modules;
 }
 std::vector<std::string> Parser::getGithub() {
-    return v_Github;
+    return cfg.v_Github;
 }
 std::string Parser::getCompiler() {
-    return compiler;
+    return cfg.compiler;
 }
 std::string Parser::getOutput() {
-    return output;
+    return cfg.output;
 }
 std::string Parser::getVersion() {
-    return version;
+    return cfg.version;
 }

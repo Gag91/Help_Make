@@ -112,23 +112,9 @@ SOFTWARE.)";
 
 int main(int argc, char *argv[]) {
     hp::enableUTF8();
-    std::string compiler = "";
-    std::string version = "";
-    std::string output = "";
-    std::string flags = "";
-    std::string inputFile = "";
-    std::string filename = "HelpMake.txt";
 
-    bool verbose = false;
-    bool run = false;
-    bool debug = false;
-    bool n_file = false;
-    bool sere = false;
-    bool create = false;
-    bool allCfgs = false;
-    bool json = false;
-    bool seperate = true;
-    bool rebuild = false;
+    Config config;
+    std::filesystem::path filename = "HelpMake.txt";
 
     std::vector<std::string> selectedConfigs;
     Build build;
@@ -158,7 +144,7 @@ int main(int argc, char *argv[]) {
         std::filesystem::remove_all("build/HelpMake");
         hp::printlnCl("[HelpMake] Cleaned build/HelpMake directory.", hp::Color::GREEN);
     } else if (argument == "--show") {
-        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate, rebuild);
+        Parser parser(filename, config);
         parser.parse();
 
         std::cout << "Compiler: " << parser.getCompiler() << "\n";
@@ -216,38 +202,45 @@ int main(int argc, char *argv[]) {
             std::string_view arg = argv[i];
 
             if (arg == "-Gcc" || arg == "-gcc") {
-                compiler = "gcc";
+                config.compiler = "gcc";
             } else if (arg == "-Clang" || arg == "-clang") {
-                compiler = "clang";
+                config.compiler = "clang";
             } else if (arg == "-MSVC" || arg == "-msvc") {
-                compiler = "msvc";
+                config.compiler = "msvc";
             } else if (arg == "-Zig" || arg == "-zig") {
-                compiler = "zig";
+                config.compiler = "zig";
             } else if (arg == "-sere" || arg == "-Sere") {
-                compiler = "sere";
-                sere = true;
+                config.compiler = "sere";
+                config.buildSere = true;
 
+            } else if (arg == "-C=") {
+                if (i + 1 < argc && argv[i + 1][0] != '-') {
+                    config.compiler = argv[++i];
+                } else {
+                    hp::printlnCl("Error: Special compiler not specified after '" + std::string(arg) + "'.", hp::Color::RED);
+                    exit(EXIT_FAILURE);
+                }
             } else if (arg == "-std=c++98" || arg == "-std=c++11" || arg == "-std=c++14" ||
                        arg == "-std=c++17" || arg == "-std=c++20" || arg == "-std=c++23" ||
                        arg == "-std=c++26") {
-                version = std::string(arg).substr(1);
+                config.version = std::string(arg).substr(1);
 
             } else if (arg == "-o" || arg == "--output") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
-                    output = argv[++i];
+                    config.output = argv[++i];
                 } else {
                     hp::printlnCl("Error: Output file not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
                 }
 
             } else if (arg.rfind("-o", 0) == 0 && arg.size() > 2) {
-                output = std::string(arg).substr(2);
+                config.output = std::string(arg).substr(2);
 
             } else if (arg == "-F" || arg == "--Flag") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
-                    if (!flags.empty())
-                        flags += " ";
-                    flags += argv[++i];
+                    if (!config.v_Flags.empty())
+                        config.v_Flags.push_back(" ");
+                    config.v_Flags.push_back(argv[++i]);
                 } else {
                     hp::printlnCl("Error: Additional flags not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
@@ -255,15 +248,15 @@ int main(int argc, char *argv[]) {
 
             } else if (arg.rfind("-F", 0) == 0 && arg.size() > 2) {
                 std::string n_flags = std::string(arg).substr(2);
-                if (!flags.empty())
-                    flags += " ";
-                flags += n_flags;
+                if (!config.v_Flags.empty())
+                    config.flags += " ";
+                config.flags += n_flags;
 
             } else if (arg == "-I" || arg == "--Include") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
-                    if (!flags.empty())
-                        flags += " ";
-                    flags += "-I" + std::string(argv[++i]);
+                    if (!config.v_Flags.empty())
+                        config.flags += " ";
+                    config.flags += "-I" + std::string(argv[++i]);
                 } else {
                     hp::printlnCl("Error: Include path not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
@@ -271,15 +264,15 @@ int main(int argc, char *argv[]) {
 
             } else if (arg.rfind("-I", 0) == 0 && arg.size() > 2) {
                 std::string includePath = std::string(arg).substr(2);
-                if (!flags.empty())
-                    flags += " ";
-                flags += "-I" + includePath;
+                if (!config.v_Flags.empty())
+                    config.flags += " ";
+                config.flags += "-I" + includePath;
 
             } else if (arg == "-L" || arg == "--Library") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
-                    if (!flags.empty())
-                        flags += " ";
-                    flags += "-L" + std::string(argv[++i]);
+                    if (!config.v_Flags.empty())
+                        config.flags += " ";
+                    config.flags += "-L" + std::string(argv[++i]);
                 } else {
                     hp::printlnCl("Error: Library path not specified after '" + std::string(arg) + "'.", hp::Color::RED);
                     exit(EXIT_FAILURE);
@@ -287,9 +280,9 @@ int main(int argc, char *argv[]) {
 
             } else if (arg.rfind("-L", 0) == 0 && arg.size() > 2) {
                 std::string libPath = std::string(arg).substr(2);
-                if (!flags.empty())
-                    flags += " ";
-                flags += "-L" + libPath;
+                if (!config.v_Flags.empty())
+                    config.flags += " ";
+                config.flags += "-L" + libPath;
 
             } else if (arg == "-f" || arg == "--file") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
@@ -311,60 +304,60 @@ int main(int argc, char *argv[]) {
                 selectedConfigs.push_back(configName);
 
             } else if (arg.rfind("--config-all", 0) == 0 && arg.size() > 9) {
-                allCfgs = true;
+                config.allCfgs = true;
             } else if (arg.rfind("-f", 0) == 0 && arg.size() > 2) {
                 filename = std::string(arg).substr(2);
             } else if (arg == "-v" || arg == "--verbose") {
-                verbose = true;
+                config.verbose = true;
             } else if (arg == "-r" || arg == "--run") {
-                run = true;
+                config.run = true;
             } else if (arg == "--debug") {
-                debug = true;
+                config.debug = true;
             } else if (arg == "--nofile") {
-                n_file = true;
+                config.n_file = true;
             } else if (arg == "--create") {
-                create = true;
+                config.create = true;
             } else if (arg == "--json") {
-                json = true;
+                config.json = true;
             } else if (arg == "--no-sep") {
-                seperate = false;
+                config.seperate = false;
             } else if (arg == "--rebuild") {
-                rebuild = true;
+                config.rebuild = true;
             } else if (!arg.empty() && (arg.back() == '/' || arg.back() == '\\')) {
                 filename = std::string(arg) + "HelpMake.txt";
-                if (verbose)
+                if (config.verbose)
                     std::cout << "Build file: " << filename << std::endl;
 
             } else if (arg.find(".txt") != std::string::npos && std::filesystem::is_regular_file(arg)) {
                 filename = std::string(arg);
-                if (verbose)
+                if (config.verbose)
                     std::cout << "Build file: " << filename << std::endl;
 
             } else if (std::filesystem::is_directory(arg)) {
                 filename = std::string(arg) + "/HelpMake.txt";
-                if (verbose)
+                if (config.verbose)
                     std::cout << "Build file: " << filename << std::endl;
 
             } else if (arg.rfind("-", 0) != 0) {
-                if (!inputFile.empty())
-                    inputFile += " ";
-                inputFile += std::string(arg);
+                if (!config.inputFile.empty())
+                    config.inputFile += " ";
+                config.inputFile += std::string(arg);
             }
         }
 
-        if (!std::filesystem::exists(filename) && !n_file && !create) {
+        if (!std::filesystem::exists(filename) && !config.n_file && !config.create) {
             if (filename != "HelpMake.txt" && std::filesystem::exists("HelpMake.txt")) {
                 hp::printlnCl("Build file not found. Using default HelpMake.txt", hp::Color::YELLOW);
                 filename = "HelpMake.txt";
             }
         }
 
-        if (std::filesystem::exists(filename) && !n_file && !create) {
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate, rebuild);
+        if (std::filesystem::exists(filename) && !config.n_file && !config.create) {
+            Parser parser(filename, config);
             parser.parse();
-            if (!create) {
+            if (!config.create) {
                 parser.executeConfigs(selectedConfigs);
-                if (!selectedConfigs.empty() && allCfgs) {
+                if (!selectedConfigs.empty() && config.allCfgs) {
                     hp::printlnCl("Warning: Both --config and --config-all specified. Ignoring --config.", hp::Color::YELLOW);
                 }
                 if (selectedConfigs.empty()) {
@@ -372,37 +365,37 @@ int main(int argc, char *argv[]) {
                 }
             }
         } else {
-            if (!n_file && !create) {
-                hp::printlnCl("Build file not found: " + filename, hp::Color::YELLOW);
+            if (!config.n_file && !config.create) {
+                hp::printlnCl("Build file not found: " + filename.string(), hp::Color::YELLOW);
             }
-            if (verbose)
+            if (config.verbose)
                 hp::printlnCl("Building from command-line arguments only\n", hp::Color::CYAN);
 
-            if (compiler.empty()) {
-                hp::printlnCl("Error: No compiler specified. Use -Gcc, -Clang, -MSVC, -Zig or Sere.", hp::Color::RED);
+            if (config.compiler.empty()) {
+                hp::printlnCl("Error: No compiler specified. Use -Gcc, -Clang, -MSVC, -Zig, -Sere or -C=<compiler>", hp::Color::RED);
                 exit(EXIT_FAILURE);
             }
 
-            if (inputFile.empty()) {
+            if (config.inputFile.empty()) {
                 hp::printlnCl("Error: No input files specified.", hp::Color::RED);
                 exit(EXIT_FAILURE);
             }
 
-            if (output.empty()) {
+            if (config.output.empty()) {
                 std::string d_output;
 #ifdef _WIN32
                 d_output = "a.exe";
-                output = "a.exe";
+                config.output = "a.exe";
 #else
                 d_output = "a.out";
-                output = "a.out";
+                config.output = "a.out";
 #endif
                 hp::printlnCl("Warning: No output file specified. Using default: " + d_output, hp::Color::YELLOW);
             }
 
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate, rebuild);
+            Parser parser(filename, config);
             parser.parse();
-            if (!create)
+            if (!config.create)
                 parser.execute();
         }
     } else {

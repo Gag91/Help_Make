@@ -11,3 +11,7 @@ Includes {
 Flags {
     -lstdc++exp
 }
+
+Config: test {
+    Flags: -lstdc++exp
+}
