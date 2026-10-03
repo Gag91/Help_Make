@@ -39,7 +39,7 @@ class Parser {
 
     bool isInputFileSet = false;
     bool isIncludeSet = false;
-    bool isGithubSet = false;
+    bool isFetchSet = false;
     bool isFlagsSet = false;
     bool isModulesSet = false;
     bool isPreBuildSet = false;

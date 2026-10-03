@@ -195,7 +195,7 @@ void Parser::parse() {
                         currentConfig.flags += " ";
                     currentConfig.flags += value;
 
-                } else if (currentBlock == "Github") {
+                } else if (currentBlock == "Fetch") {
                     std::string path = processGithubEntry(value);
                     if (!path.empty()) {
                         currentConfig.flags += std::format(" -I{}", path);
@@ -228,8 +228,8 @@ void Parser::parse() {
                 currentBlock = "Flags";
                 continue;
             }
-            if (line.find("Github {") != std::string::npos) {
-                currentBlock = "Github";
+            if (line.find("Fetch {") != std::string::npos) {
+                currentBlock = "Fetch";
                 continue;
             }
             if (line.find("Modules {") != std::string::npos) {
@@ -402,11 +402,11 @@ void Parser::parse() {
             if (verbose)
                 std::cout << std::format("Founded Flags: '{}'\n", flags);
 
-        } else if (line.find("Github {") != std::string::npos) {
-            isGithubSet = true;
-        } else if (line.find("}") != std::string::npos && isGithubSet) {
-            isGithubSet = false;
-        } else if (isGithubSet) {
+        } else if (line.find("Fetch {") != std::string::npos) {
+            isFetchSet = true;
+        } else if (line.find("}") != std::string::npos && isFetchSet) {
+            isFetchSet = false;
+        } else if (isFetchSet) {
             std::string value = trim(line);
             if (value.empty())
                 continue;
@@ -604,7 +604,7 @@ void Parser::execute() {
             std::string objCmd = std::format("{} -{} -c \"{}\" -o \"{}\" -MMD", comp, CommandFlags, file, objPath);
 
             if (debug)
-                hp::printlnCl(std::format("[HelpMake] Real Command: {}", objCmd), hp::Color::YELLOW);
+                hp::printlnCl(std::format("[HelpMake] Object Command: {}", objCmd), hp::Color::YELLOW);
 
             int r = std::system(objCmd.c_str());
             if (r != 0)
@@ -624,7 +624,7 @@ void Parser::execute() {
                 std::cout << std::format("\nCommand: {}\n", displayCommand);
             }
             if (debug)
-                hp::printlnCl(std::format("[HelpMake] Real Command: {}", linkCmd), hp::Color::YELLOW);
+                hp::printlnCl(std::format("[HelpMake] Link Command: {}", linkCmd), hp::Color::YELLOW);
 
             exitCode = std::system(linkCmd.c_str());
             elapsed = hp::stopTimer(timer);
@@ -840,8 +840,8 @@ std::string Parser::processGithubEntry(const std::string &value) {
         fullPath += "/" + folder;
 
     if (debug) {
-        hp::printlnCl(std::format("[Debug] Github Folder include: '{}'", folder), hp::Color::YELLOW);
-        hp::printlnCl(std::format("[Debug] Github Clone Folder: '{}'", include), hp::Color::YELLOW);
+        hp::printlnCl(std::format("[Debug] Fetch Include Folder: '{}'", folder), hp::Color::YELLOW);
+        hp::printlnCl(std::format("[Debug] Fetch Clone Folder: '{}'", include), hp::Color::YELLOW);
     }
 
     return fullPath;

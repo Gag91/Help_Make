@@ -28,7 +28,7 @@ namespace hp {
 
         bool isInputFileSet = false;
         bool isIncludeSet = false;
-        bool isGithubSet = false;
+        bool isFetchSet = false;
         bool isFlagsSet = false;
         bool isModulesSet = false;
         bool isPreBuildSet = false;
@@ -157,7 +157,7 @@ namespace hp {
 
         HelpMake &addGithub(const std::string &repo) {
             v_Github.push_back(repo);
-            isGithubSet = true;
+            isFetchSet = true;
             return *this;
         }
 
@@ -200,7 +200,7 @@ namespace hp {
 
         HelpMake &setGithub(std::vector<std::string> repos) {
             v_Github = std::move(repos);
-            isGithubSet = true;
+            isFetchSet = true;
             return *this;
         }
 
