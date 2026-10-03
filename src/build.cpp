@@ -128,6 +128,7 @@ int main(int argc, char *argv[]) {
     bool create = false;
     bool allCfgs = false;
     bool json = false;
+    bool seperate = true;
 
     std::vector<std::string> selectedConfigs;
     Build build;
@@ -153,8 +154,11 @@ int main(int argc, char *argv[]) {
             std::ifstream file(filename);
             std::cout << file.rdbuf() << "\n";
         }
+    } else if (argument == "--clean") {
+        std::filesystem::remove_all("build/HelpMake");
+        hp::printlnCl("[HelpMake] Cleaned build/HelpMake directory.", hp::Color::GREEN);
     } else if (argument == "--show") {
-        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json);
+        Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate);
         parser.parse();
 
         std::cout << "Compiler: " << parser.getCompiler() << "\n";
@@ -322,6 +326,8 @@ int main(int argc, char *argv[]) {
                 create = true;
             } else if (arg == "--json") {
                 json = true;
+            } else if (arg == "--no-sep") {
+                seperate = false;
             } else if (!arg.empty() && (arg.back() == '/' || arg.back() == '\\')) {
                 filename = std::string(arg) + "HelpMake.txt";
                 if (verbose)
@@ -352,7 +358,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (std::filesystem::exists(filename) && !n_file && !create) {
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate);
             parser.parse();
             if (!create) {
                 parser.executeConfigs(selectedConfigs);
@@ -392,7 +398,7 @@ int main(int argc, char *argv[]) {
                 hp::printlnCl("Warning: No output file specified. Using default: " + d_output, hp::Color::YELLOW);
             }
 
-            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json);
+            Parser parser(filename, inputFile, compiler, version, output, flags, verbose, run, debug, n_file, sere, create, allCfgs, json, seperate);
             parser.parse();
             if (!create)
                 parser.execute();

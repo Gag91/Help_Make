@@ -128,7 +128,7 @@ void Parser::parse() {
     }
 
     if (!n_file && verbose)
-        std::cout << std::format("[HelpMake]Trying to open file: {}\n", filename.string());
+        std::cout << std::format("[HelpMake] Trying to open file: {}\n", filename.string());
 
     if (n_file) {
         buildCommand();
@@ -548,38 +548,99 @@ void Parser::execute() {
             hp::printlnCl("Pre-build command executed successfully.", hp::Color::GREEN);
     }
 
-    std::string command;
+    std::string CommandFlags = version;
+    if (!modules.empty())
+        CommandFlags += " " + modules;
+    if (!flags.empty())
+        CommandFlags += " " + flags;
+
     std::string displayCommand;
+    int exitCode = 0;
+    double elapsed = 0;
+    if (seperate) {
+        std::filesystem::create_directories("build/HelpMake/obj");
 
-    if (compiler != "sere") {
-        std::string body = version;
-        if (!modules.empty())
-            body += " " + modules;
-        body += " " + inputFile;
-        body += " -o " + output;
-        if (!flags.empty())
-            body += " " + flags;
-        if (run)
-            body += " && " + output;
+        std::vector<std::string> expandedFiles;
+        for (const auto &entry : v_inputFiles) {
+            if (entry.find('*') != std::string::npos) {
+                std::filesystem::path p(entry);
+                std::string dir = p.parent_path().string();
 
-        command = std::format("{} -fdiagnostics-color=always -{}", comp, body);
-        displayCommand = std::format("{} -{}", comp, body);
+                std::string extension = p.extension().string();
+                if (extension.empty()) {
+                    expandedFiles.push_back(entry);
+                    continue;
+                }
+
+                for (const auto &file : std::filesystem::directory_iterator(dir)) {
+                    if (file.is_regular_file() && file.path().extension() == extension)
+                        expandedFiles.push_back(file.path().string());
+                }
+            } else {
+                expandedFiles.push_back(entry);
+            }
+        }
+
+        if (debug) {
+            hp::printlnCl(std::format("[HelpMake] {} files to check:\n", expandedFiles.size()), hp::Color::YELLOW);
+            for (const auto &file : expandedFiles)
+                hp::printlnCl(std::format("- {}", file), hp::Color::YELLOW);
+        }
+
+        std::vector<std::string> objects;
+
+        auto timer = hp::startTimer();
+        for (const auto &file : expandedFiles) {
+            std::string baseName = std::filesystem::path(file).stem().string();
+            std::string objPath = std::format("build/HelpMake/obj/{}.o", baseName);
+
+            if (!needsRebuild(file, objPath)) {
+                if (debug)
+                    hp::printlnCl(std::format("[HelpMake] Skip (up to date): {}\n", file), hp::Color::YELLOW);
+                objects.push_back(objPath);
+                continue;
+            }
+
+            std::string objCmd = std::format("{} -{} -c \"{}\" -o \"{}\" -MMD", comp, CommandFlags, file, objPath);
+
+            if (debug)
+                hp::printlnCl(std::format("[HelpMake] Real Command: {}", objCmd), hp::Color::YELLOW);
+
+            int r = std::system(objCmd.c_str());
+            if (r != 0)
+                exitCode = r;
+            objects.push_back(objPath);
+        }
+
+        if (exitCode == 0) {
+            displayCommand = std::format("{} -{} -o {}", comp, CommandFlags, output);
+
+            std::string linkCmd = comp + " -" + CommandFlags;
+            for (const auto &obj : objects)
+                linkCmd += " \"" + obj + "\"";
+            linkCmd += " -o \"" + output + "\"";
+
+            if (verbose) {
+                std::cout << std::format("\nCommand: {}\n", displayCommand);
+            }
+            if (debug)
+                hp::printlnCl(std::format("[HelpMake] Real Command: {}", linkCmd), hp::Color::YELLOW);
+
+            exitCode = std::system(linkCmd.c_str());
+            elapsed = hp::stopTimer(timer);
+        }
+
     } else {
-        std::string body = modules;
-        if (!body.empty())
-            body += " ";
-        body += inputFile + " -o " + output;
-        if (!flags.empty())
-            body += " " + flags;
-        if (run)
-            body += " && " + output;
+        displayCommand = std::format("{} -{} {} -o {}", comp, CommandFlags, inputFile, output);
 
-        command = std::format("{} {}", comp, body);
-        displayCommand = command;
+        std::string command = std::format("{} -fdiagnostics-color=always -{} {} -o {}",
+                                          comp, CommandFlags, inputFile, output);
+
+        if (debug)
+            hp::printlnCl(std::format("[HelpMake] Real Command: {}", command), hp::Color::YELLOW);
+
+        exitCode = std::system(command.c_str());
     }
-
-    if (verbose)
-        std::cout << std::format("\nCommand: {}\n", displayCommand);
 
     std::string r_logDir = "build/HelpMake/logs/raw";
     std::string logDir = "build/HelpMake/logs";
@@ -591,10 +652,8 @@ void Parser::execute() {
     std::string r_logPath = r_logDir + "/" + baseName + ".txt";
     std::string logPath = logDir + "/" + baseName + ".txt";
 
-    std::string redirectCmd = std::format("{} > \"{}\" 2>&1", command, r_logPath);
-    auto timer = hp::startTimer();
-    int exitCode = std::system(redirectCmd.c_str());
-    double elapsed = hp::stopTimer(timer);
+    /*std::string redirectCmd = std::format("{} > \"{}\" 2>&1", command, r_logPath);*/
+    /*int exitCode = std::system(redirectCmd.c_str());*/
 
     std::string result;
     std::ifstream rawFile(r_logPath);
@@ -823,6 +882,51 @@ void Parser::generateCompileCommands() {
 
     if (verbose)
         hp::printlnCl("Generated compile_commands.json", hp::Color::GREEN);
+}
+
+bool Parser::needsRebuild(const std::string &src, const std::string &obj) {
+    if (!std::filesystem::exists(obj))
+        return true;
+
+    auto srcTime = std::filesystem::last_write_time(src);
+    auto objTime = std::filesystem::last_write_time(obj);
+
+    std::ifstream depFile(std::filesystem::path(obj).replace_filename(std::filesystem::path(obj).stem().string() + ".d").generic_string());
+    if (!depFile.is_open()) {
+        hp::printlnCl(std::format("Warning: Could not open dependency file for '{}'. Rebuilding.", obj), hp::Color::YELLOW);
+        return true;
+    }
+    std::string line;
+    auto depTime = std::filesystem::file_time_type::min();
+
+    if (srcTime > objTime) {
+        if (debug)
+            hp::printlnCl(std::format("[Debug] Source file '{}' is newer than object '{}'. Rebuilding.", src, obj), hp::Color::YELLOW);
+        return true;
+    }
+
+    while (std::getline(depFile, line)) {
+        std::istringstream iss(line);
+        std::string depFilePath;
+        while (iss >> depFilePath) {
+            if (depFilePath.find(":") != std::string::npos || depFilePath == "\\" || (depFilePath.length() <= 2 && depFilePath.back() == '\\'))
+                continue;
+
+            if (!std::filesystem::exists(depFilePath)) {
+                hp::printlnCl(std::format("Warning: Dependency file '{}' does not exist. Rebuilding.", depFilePath), hp::Color::YELLOW);
+                return true;
+            }
+
+            depTime = std::filesystem::last_write_time(depFilePath);
+            if (depTime > objTime) {
+                if (debug)
+                    hp::printlnCl(std::format("[Debug] Dependency '{}' is newer than object '{}'. Rebuilding.", depFilePath, obj), hp::Color::YELLOW);
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 std::vector<std::string> Parser::getInputFile() {

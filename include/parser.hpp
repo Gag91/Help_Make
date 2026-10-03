@@ -53,6 +53,7 @@ class Parser {
     bool create = false;
     bool allCfgs = false;
     bool json = false;
+    bool seperate = true;
 
     std::vector<std::string> includeFiles;
     std::vector<std::string> v_inputFiles;
@@ -61,6 +62,7 @@ class Parser {
     std::vector<std::string> v_Github;
     std::vector<std::string> v_Postcmd;
     std::vector<std::string> v_Precmd;
+    std::string unused;
 
     Config currentConfig;
     std::map<std::string, Config> configs;
@@ -68,15 +70,16 @@ class Parser {
 
   public:
     Parser(std::filesystem::path file, std::string inputFile, std::string comp, std::string ver,
-           std::string out, std::string flg, bool verbose, bool run, bool debug, bool n_file, bool buildSere, bool create, bool allCfgs, bool json)
+           std::string out, std::string flg, bool verbose, bool run, bool debug, bool n_file, bool buildSere, bool create, bool allCfgs, bool json, bool seperate)
         : filename(file), inputFile(inputFile), compiler(comp), version(ver), output(out), flags(flg),
-          verbose(verbose), run(run), debug(debug), n_file(n_file), buildSere(buildSere), create(create), allCfgs(allCfgs), json(json) {}
+          verbose(verbose), run(run), debug(debug), n_file(n_file), buildSere(buildSere), create(create), allCfgs(allCfgs), json(json), seperate(seperate) {}
 
     void parse();
     void execute();
     void buildCommand();
     void executeConfigs(const std::vector<std::string> &names);
     void generateCompileCommands();
+    void transformwildcards(const std::string &input);
 
     std::vector<std::string> getInputFile();
     std::vector<std::string> getInclude();
@@ -88,4 +91,6 @@ class Parser {
     std::string getCompiler();
     std::string getOutput();
     std::string getVersion();
+
+    bool needsRebuild(const std::string &src, const std::string &obj);
 };
