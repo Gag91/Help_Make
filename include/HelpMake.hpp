@@ -9,7 +9,6 @@
 #include <vector>
 
 namespace hp {
-    class HelpMake;
 
     template <typename T>
     concept StringLike = std::convertible_to<T, std::string>;

@@ -38,16 +38,12 @@ static bool gitAvailable() {
 }
 
 static std::string compilerCommand(const std::string &compiler) {
-    if (compiler == "gcc")
-        return "g++";
     if (compiler == "clang")
         return "clang++";
     if (compiler == "msvc")
         return "cl";
     if (compiler == "zig")
         return "zig c++";
-    if (compiler == "sere")
-        return "sere";
     return compiler;
 }
 
@@ -56,18 +52,10 @@ void Parser::parse() {
     if (cfg.create) {
         hp::File file;
 
-        std::istringstream issInput(cfg.inputFile);
-        std::string token;
-        while (issInput >> token)
-            cfg.v_inputFiles.push_back(token);
-
-        std::istringstream issFlags(cfg.flags);
-        while (issFlags >> token)
-            cfg.v_Flags.push_back(token);
-
-        std::istringstream issModules(cfg.modules);
-        while (issModules >> token)
-            cfg.v_Modules.push_back(token);
+        cfg.v_inputFiles = splitArgs(cfg.inputFile);
+        cfg.v_Flags = splitArgs(cfg.flags);
+        cfg.includeFiles = splitArgs(cfg.includes);
+        cfg.v_Modules = splitArgs(cfg.modules);
 
         if (file.exists(filename.string())) {
             hp::printlnCl(std::format("Warning: {} already exists. Overwrite? (y/n)", filename.string()), hp::Color::YELLOW);
@@ -199,7 +187,7 @@ void Parser::parse() {
                     std::string path = processGithubEntry(value);
                     if (!path.empty()) {
                         currentConfig.flags += std::format(" -I{}", path);
-                        currentConfig.github.push_back(std::format("{} -> {}", value.substr(0, value.find("->")), path));
+                        currentConfig.v_Github.push_back(std::format("{} -> {}", value.substr(0, value.find("->")), path));
                     }
 
                 } else if (currentBlock == "Modules") {
@@ -318,12 +306,6 @@ void Parser::parse() {
             cfg.version = extractValue(line, "Version:");
             if (cfg.version.empty()) {
                 hp::printlnCl("Error: Version not specified in the file.", hp::Color::RED);
-                exit(EXIT_FAILURE);
-            }
-            if (cfg.version != "std=c++98" && cfg.version != "std=c++11" && cfg.version != "std=c++14" &&
-                cfg.version != "std=c++17" && cfg.version != "std=c++20" && cfg.version != "std=c++23" && cfg.version != "std=c++26") {
-                hp::printlnCl(std::format("Error: Unsupported version specified: {}", cfg.version), hp::Color::RED);
-                hp::printlnCl("Supported versions are: std=c++98, std=c++11, std=c++14, std=c++17, std=c++20, std=c++23, std=c++26.", hp::Color::YELLOW);
                 exit(EXIT_FAILURE);
             }
             if (cfg.verbose)
@@ -498,10 +480,6 @@ void Parser::parse() {
         hp::printlnCl("Error: Compiler not found in the file.", hp::Color::RED);
         exit(EXIT_FAILURE);
     }
-    if (cfg.version.empty()) {
-        hp::printlnCl("Version not specified in the file. Using default: std=c++20", hp::Color::YELLOW);
-        cfg.version = "std=c++20";
-    }
     if (cfg.output.empty()) {
 #ifdef _WIN32
         cfg.output = "a.exe";
@@ -560,9 +538,12 @@ void Parser::execute() {
         CommandFlags += " " + cfg.flags;
 
     std::string displayCommand;
+    std::string command;
+    if (!cfg.version.empty())
+        cfg.version.insert(cfg.version.begin(), '-');
+
     int exitCode = 0;
     double elapsed = 0;
-    std::string command;
     auto timer = hp::startTimer();
     if (cfg.seperate) {
         std::filesystem::create_directories("build/HelpMake/obj");
@@ -607,7 +588,7 @@ void Parser::execute() {
                 continue;
             }
 
-            std::string objCmd = std::format("{} -fdiagnostics-color=always -{} -c \"{}\" -o \"{}\" -MMD", comp, CommandFlags, file, objPath);
+            std::string objCmd = std::format("{} -fdiagnostics-color=always {} -c \"{}\" -o \"{}\" -MMD", comp, CommandFlags, file, objPath);
 
             if (cfg.debug)
                 hp::printlnCl(std::format("[HelpMake] Object Command: {}", objCmd), hp::Color::YELLOW);
@@ -618,9 +599,9 @@ void Parser::execute() {
         }
 
         if (exitCode == 0) {
-            displayCommand = std::format("{} -{} -o {}", comp, CommandFlags, cfg.output);
+            displayCommand = std::format("{} {} -o {}", comp, CommandFlags, cfg.output);
 
-            std::string linkCmd = comp + " -fdiagnostics-color=always -" + CommandFlags;
+            std::string linkCmd = comp + " -fdiagnostics-color=always " + CommandFlags;
             for (const auto &obj : objects)
                 linkCmd += " \"" + obj + "\"";
             linkCmd += " -o \"" + cfg.output + "\"";
@@ -638,7 +619,7 @@ void Parser::execute() {
     } else {
         displayCommand = std::format("{} -{} {} -o {}", comp, CommandFlags, cfg.inputFile, cfg.output);
 
-        command = std::format("{} -fdiagnostics-color=always -{} {} -o {}",
+        command = std::format("{} -fdiagnostics-color=always {} {} -o {}",
                               comp, CommandFlags, cfg.inputFile, cfg.output);
 
         if (cfg.debug)
@@ -717,6 +698,11 @@ void Parser::buildCommand() {
         cfg.output = "a.exe";
     }
 
+    cfg.v_inputFiles = splitArgs(cfg.inputFile);
+    cfg.v_Flags = splitArgs(cfg.flags);
+    cfg.includeFiles = splitArgs(cfg.includes);
+    cfg.v_Modules = splitArgs(cfg.modules);
+
     if (cfg.verbose) {
         std::cout << std::format("Compiler:    {}{}\n", hp::getColorCode(hp::YELLOW), cfg.compiler)
                   << hp::getColorCode(hp::RESET);
@@ -765,6 +751,10 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
         if (local.includeFiles.empty())
             local.includeFiles = cfg.includeFiles;
 
+        if (!local.version.empty()) {
+            local.version.insert(local.version.begin(), '-');
+        }
+
         std::string files;
         for (const auto &f : local.v_inputFiles) {
             if (!files.empty())
@@ -786,8 +776,7 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
 
         hp::printlnCl(std::format("\nBuilding config: {}", name), hp::Color::CYAN);
 
-        std::string command = std::format("{} -{} {} -o {} {}{}",
-                                          comp, local.version, files, local.output, local.flags, incFlags);
+        std::string command = std::format("{} {} {} -o {} {}{}", comp, local.version, files, local.output, local.flags, incFlags);
 
         if (cfg.verbose)
             std::cout << std::format("Command: {}\n", command);
@@ -922,6 +911,15 @@ bool Parser::needsRebuild(const std::string &src, const std::string &obj) {
     }
 
     return false;
+}
+
+std::vector<std::string> Parser::splitArgs(const std::string &args) {
+    std::vector<std::string> result;
+    std::istringstream iss(args);
+    std::string token;
+    while (iss >> token)
+        result.push_back(token);
+    return result;
 }
 
 std::vector<std::string> Parser::getInputFile() {

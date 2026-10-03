@@ -3,6 +3,7 @@
 #include "hp/other/other.hpp"
 #include "parser.hpp"
 #include <filesystem>
+#include <format>
 #include <fstream>
 
 class Build {
@@ -213,18 +214,36 @@ int main(int argc, char *argv[]) {
                 config.compiler = "sere";
                 config.buildSere = true;
 
-            } else if (arg == "-C=") {
-                if (i + 1 < argc && argv[i + 1][0] != '-') {
-                    config.compiler = argv[++i];
-                } else {
-                    hp::printlnCl("Error: Special compiler not specified after '" + std::string(arg) + "'.", hp::Color::RED);
-                    exit(EXIT_FAILURE);
+            } else if (arg.rfind("-C=", 0) == 0) {
+                std::string value = std::string(arg).substr(3);
+                if (value.empty()) {
+                    if (i + 1 < argc && argv[i + 1][0] != '-')
+                        value = argv[++i];
+                    else {
+                        hp::printlnCl(std::format("Error: Compiler not specified after '-C='."), hp::Color::RED);
+                        exit(EXIT_FAILURE);
+                    }
                 }
-            } else if (arg == "-std=c++98" || arg == "-std=c++11" || arg == "-std=c++14" ||
-                       arg == "-std=c++17" || arg == "-std=c++20" || arg == "-std=c++23" ||
-                       arg == "-std=c++26") {
-                config.version = std::string(arg).substr(1);
+                config.compiler = value;
+                if (config.debug)
+                    hp::printlnCl(std::format("[Debug] Special compiler: {}", config.compiler), hp::Color::YELLOW);
 
+            } else if (arg.rfind("-V=", 0) == 0) {
+                std::string value = std::string(arg).substr(3);
+                if (value.empty()) {
+                    if (i + 1 < argc && argv[i + 1][0] != '-')
+                        value = argv[++i];
+                    else {
+                        hp::printlnCl(std::format("Error: Version not specified after '-V='."), hp::Color::RED);
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                if (value.front() != '-') {
+                    value.insert(value.begin(), '-');
+                }
+                config.version = value;
+                if (config.debug)
+                    hp::printlnCl(std::format("[Debug] Special version: {}", config.version), hp::Color::YELLOW);
             } else if (arg == "-o" || arg == "--output") {
                 if (i + 1 < argc && argv[i + 1][0] != '-') {
                     config.output = argv[++i];

@@ -20,7 +20,6 @@ struct Config {
 
     std::vector<std::string> preBuild;
     std::vector<std::string> postBuild;
-    std::vector<std::string> github;
 
     std::vector<std::string> includeFiles;
     std::vector<std::string> v_inputFiles;
@@ -55,29 +54,11 @@ class Parser {
     bool isPreBuildSet = false;
     bool isPostBuildSet = false;
     bool isConfigSet = false;
-    bool verbose = false;
-    bool debug = false;
-    bool run = false;
-    bool n_file = false;
-    bool buildSere = false;
-    bool create = false;
-    bool allCfgs = false;
-    bool json = false;
-    bool seperate = true;
-    bool rebuild = false;
-
-    std::vector<std::string> includeFiles;
-    std::vector<std::string> v_inputFiles;
-    std::vector<std::string> v_Flags;
-    std::vector<std::string> v_Modules;
-    std::vector<std::string> v_Github;
-    std::vector<std::string> v_Postcmd;
-    std::vector<std::string> v_Precmd;
-    std::string unused;
 
     Config currentConfig;
     std::map<std::string, Config> configs;
     int configBraceDepth = 1;
+    static std::vector<std::string> splitArgs(const std::string &args);
 
   public:
     Parser(std::filesystem::path file, Config config)
