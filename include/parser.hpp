@@ -63,7 +63,6 @@ class Parser {
     std::vector<std::string> v_Github;
     std::vector<std::string> v_Postcmd;
     std::vector<std::string> v_Precmd;
-    std::string unused;
 
     Config currentConfig;
     std::map<std::string, Config> configs;
