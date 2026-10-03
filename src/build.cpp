@@ -328,6 +328,8 @@ int main(int argc, char *argv[]) {
                 json = true;
             } else if (arg == "--no-sep") {
                 seperate = false;
+            } else if (arg == "--rebuild") {
+                rebuild = true;
             } else if (!arg.empty() && (arg.back() == '/' || arg.back() == '\\')) {
                 filename = std::string(arg) + "HelpMake.txt";
                 if (verbose)
