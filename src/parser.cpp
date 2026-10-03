@@ -531,11 +531,13 @@ void Parser::execute() {
     std::string r_logPath = r_logDir + "/" + baseName + ".txt";
     std::string logPath = logDir + "/" + baseName + ".txt";
 
-    std::string CommandFlags = cfg.version;
+    std::string CommandFlags;
+    if (!cfg.version.empty())
+        CommandFlags = cfg.version;
     if (!cfg.modules.empty())
-        CommandFlags += " " + cfg.modules;
+        CommandFlags += (CommandFlags.empty() ? "" : " ") + cfg.modules;
     if (!cfg.flags.empty())
-        CommandFlags += " " + cfg.flags;
+        CommandFlags += (CommandFlags.empty() ? "" : " ") + cfg.flags;
 
     std::string displayCommand;
     std::string command;
