@@ -544,6 +544,10 @@ void Parser::execute() {
 
     int exitCode = 0;
     double elapsed = 0;
+    displayCommand = std::format("{} {} -o {}", comp, CommandFlags, cfg.output);
+    if (cfg.verbose) {
+        std::cout << std::format("\nCommand: {}\n", displayCommand);
+    }
     auto timer = hp::startTimer();
     if (cfg.seperate) {
         std::filesystem::create_directories("build/HelpMake/obj");
@@ -574,6 +578,7 @@ void Parser::execute() {
             for (const auto &file : expandedFiles)
                 hp::printlnCl(std::format("- {}", file), hp::Color::YELLOW);
         }
+        std::cout << '\n';
 
         std::vector<std::string> objects;
 
@@ -591,7 +596,7 @@ void Parser::execute() {
             std::string objCmd = std::format("{} -fdiagnostics-color=always {} -c \"{}\" -o \"{}\" -MMD", comp, CommandFlags, file, objPath);
 
             if (cfg.debug)
-                hp::printlnCl(std::format("[HelpMake] Object Command: {}", objCmd), hp::Color::YELLOW);
+                hp::printlnCl(std::format("[HelpMake] Object Command: {}\n", objCmd), hp::Color::YELLOW);
 
             std::string redirectCmd = std::format("{} > \"{}\" 2>&1", objCmd, r_logPath);
             exitCode = std::system(redirectCmd.c_str());
@@ -599,18 +604,14 @@ void Parser::execute() {
         }
 
         if (exitCode == 0) {
-            displayCommand = std::format("{} {} -o {}", comp, CommandFlags, cfg.output);
 
             std::string linkCmd = comp + " -fdiagnostics-color=always " + CommandFlags;
             for (const auto &obj : objects)
                 linkCmd += " \"" + obj + "\"";
             linkCmd += " -o \"" + cfg.output + "\"";
 
-            if (cfg.verbose) {
-                std::cout << std::format("\nCommand: {}\n", displayCommand);
-            }
             if (cfg.debug)
-                hp::printlnCl(std::format("[HelpMake] Link Command: {}", linkCmd), hp::Color::YELLOW);
+                hp::printlnCl(std::format("\n[HelpMake] Link Command: {}", linkCmd), hp::Color::YELLOW);
 
             std::string redirectCmd = std::format("{} > \"{}\" 2>&1", linkCmd, r_logPath);
             exitCode = std::system(redirectCmd.c_str());
