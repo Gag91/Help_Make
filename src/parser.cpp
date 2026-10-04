@@ -780,35 +780,43 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
             continue;
         }
 
-        hp::printlnCl(std::format("\nBuilding config: {}", name), hp::Color::CYAN);
-        std::string command;
-        std::string displayCommand;
         std::string CommandFlags;
-        displayCommand = std::format("{} {} {} -o {}", comp, CommandFlags, cfg.inputFile, cfg.output);
-        if (cfg.verbose) {
-            std::cout << std::format("\nConfig '{}': Command: {}\n", name, displayCommand);
-        }
-        int exitCode = 0;
         if (!local.version.empty())
             CommandFlags = local.version;
         if (!local.modules.empty())
             CommandFlags += (CommandFlags.empty() ? "" : " ") + local.modules;
         if (!local.flags.empty())
             CommandFlags += (CommandFlags.empty() ? "" : " ") + local.flags;
+
+        std::filesystem::create_directories(r_logDir);
+        std::filesystem::create_directories(logDir);
+
+        hp::printlnCl(std::format("\nBuilding config: {}", name), hp::Color::CYAN);
+
+        if (local.verbose) {
+            std::string displayCommand = std::format("{} {} {} -o {}", comp, CommandFlags, local.inputFile, local.output);
+            std::cout << std::format("Config '{}': Command: {}\n", name, displayCommand);
+        }
+
+        if (!local.Precmd.empty()) {
+            if (local.verbose)
+                hp::printlnCl(std::format("Config '{}': Running pre-build command: {}", name, local.Precmd), hp::Color::CYAN);
+            std::system(local.Precmd.c_str());
+        }
+
+        int exitCode = 0;
+
         if (local.seperate) {
             std::vector<std::string> expandedFiles;
-
             for (const auto &entry : local.v_inputFiles) {
                 if (entry.find('*') != std::string::npos) {
                     std::filesystem::path p(entry);
                     std::string dir = p.parent_path().string();
-
                     std::string extension = p.extension().string();
                     if (extension.empty()) {
                         expandedFiles.push_back(entry);
                         continue;
                     }
-
                     for (const auto &file : std::filesystem::directory_iterator(dir)) {
                         if (file.is_regular_file() && file.path().extension() == extension)
                             expandedFiles.push_back(file.path().string());
@@ -831,7 +839,7 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
 
                 if (!needsRebuild(file, Obj)) {
                     if (local.debug)
-                        hp::printlnCl(std::format("[HelpMake] Config '{}' Skip (up to date): {}", name, file), hp::YELLOW);
+                        hp::printlnCl(std::format("[HelpMake] Config '{}': Skip (up to date): {}", name, file), hp::Color::YELLOW);
                     objs.push_back(Obj);
                     continue;
                 }
@@ -844,10 +852,12 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
                 std::string redirectCmd = std::format("{} > \"{}\" 2>&1", objCmd, r_logPath);
                 exitCode = std::system(redirectCmd.c_str());
                 objs.push_back(Obj);
+
+                if (exitCode != 0)
+                    break;
             }
 
             if (exitCode == 0) {
-
                 std::string linkCmd = comp + " -fdiagnostics-color=always " + CommandFlags;
                 for (const auto &obj : objs)
                     linkCmd += " \"" + obj + "\"";
@@ -858,14 +868,10 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
 
                 std::string redirectCmd = std::format("{} > \"{}\" 2>&1", linkCmd, r_logPath);
                 exitCode = std::system(redirectCmd.c_str());
-            } else {
-                hp::printlnCl(std::format("Config '{}' compilation failed.", name), hp::Color::RED);
-                exit(EXIT_FAILURE);
             }
-
         } else {
-            command = std::format("{} -fdiagnostics-color=always {} {} -o {} {}",
-                                  comp, CommandFlags, local.inputFile, local.output, (local.run ? "&& " + local.output : ""));
+            std::string command = std::format("{} -fdiagnostics-color=always {} {} -o {} {}",
+                                              comp, CommandFlags, local.inputFile, local.output, (local.run ? "&& " + local.output : ""));
 
             if (cfg.debug)
                 hp::printlnCl(std::format("[HelpMake] Config '{}': Real Command: {}", name, command), hp::Color::YELLOW);
@@ -874,10 +880,37 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
             exitCode = std::system(redirectCmd.c_str());
         }
 
-        if (exitCode == 0)
+        std::string result;
+        {
+            std::ifstream rawFile(r_logPath);
+            if (rawFile.is_open())
+                result.assign((std::istreambuf_iterator<char>(rawFile)), std::istreambuf_iterator<char>());
+        }
+
+        std::regex ansi_pattern("\x1B\\[[0-9;]*[a-zA-Z]");
+        std::string cleanLog = std::regex_replace(result, ansi_pattern, "");
+        {
+            std::ofstream cleanFile(logPath, std::ios::trunc);
+            if (cleanFile.is_open())
+                cleanFile << cleanLog;
+        }
+
+        if (exitCode == 0) {
             hp::printlnCl(std::format("Config '{}' compiled successfully. Output: {}", name, local.output), hp::Color::GREEN);
-        else
+            if (!result.empty() && local.verbose)
+                std::cout << result << "\n";
+
+            if (!local.Postcmd.empty()) {
+                if (local.verbose)
+                    hp::printlnCl(std::format("Config '{}': Running post-build command: {}", name, local.Postcmd), hp::Color::CYAN);
+                std::system(local.Postcmd.c_str());
+            }
+        } else {
+            if (!result.empty())
+                std::cout << result << "\n";
             hp::printlnCl(std::format("Config '{}' compilation failed.", name), hp::Color::RED);
+            hp::printlnCl(std::format("See Logs: {}", logPath), hp::Color::YELLOW);
+        }
     }
 }
 

@@ -175,6 +175,10 @@ int main(int argc, char *argv[]) {
     } else if (argument == "--clean") {
         std::filesystem::remove_all("build/HelpMake");
         hp::printlnCl("[HelpMake] Cleaned build/HelpMake directory.", hp::Color::GREEN);
+    } else if (argument == "--init") {
+        Parser::Init init;
+        init.run();
+        return 0;
     } else if (argument == "--show") {
         Parser parser(filename, config);
         parser.parse();

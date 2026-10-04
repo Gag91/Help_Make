@@ -66,6 +66,23 @@ class Parser {
     Parser(std::filesystem::path file, Config config)
         : filename(file), cfg(config) {}
 
+    class Init {
+      private:
+        Config InitCfg;
+
+        std::string detectFiles();
+        std::string detectIncludes();
+        std::string defaultOutput();
+        void chooseLanguage();
+        void showPreview();
+        void previewAndSave();
+        std::string guessStandard();
+
+      public:
+        Init();
+        void run();
+    };
+
     void parse();
     void execute();
     void buildCommand();
