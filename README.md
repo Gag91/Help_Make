@@ -219,7 +219,7 @@ setx PATH "%PATH%;C:\path\to\Help_Make"
 - C++20
 
 ## License
-This program is licensed under the MIT License. See license file for details.
+This program is licensed under the MIT License. See [LICENSE](https://github.com/Gag91/Help_Make?tab=MIT-1-ov-file) for details.
 
 ## Contribution
  Feel free to contribute
