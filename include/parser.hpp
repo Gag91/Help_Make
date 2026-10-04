@@ -1,4 +1,5 @@
 #pragma once
+
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -69,6 +70,7 @@ class Parser {
     void buildCommand();
     void executeConfigs(const std::vector<std::string> &names);
     void generateCompileCommands();
+    void install();
 
     std::vector<std::string> getInputFile();
     std::vector<std::string> getInclude();

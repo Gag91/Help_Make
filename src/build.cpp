@@ -145,6 +145,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> selectedConfigs;
     Build build;
 
+    bool install = false;
+
     if (argc < 2) {
         build.help();
         return 0;
@@ -154,6 +156,10 @@ int main(int argc, char *argv[]) {
 
     if (argument == "--help" || argument == "-h") {
         build.help();
+        return 0;
+    } else if (argument == "--install" || argument == "install") {
+        Parser parser(filename, config);
+        parser.install();
         return 0;
     } else if (argument == "--version" || argument == "-v") {
         build.version();

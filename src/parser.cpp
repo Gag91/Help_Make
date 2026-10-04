@@ -617,7 +617,7 @@ void Parser::execute() {
             std::string linkCmd = comp + " -fdiagnostics-color=always " + CommandFlags;
             for (const auto &obj : objects)
                 linkCmd += " \"" + obj + "\"";
-            linkCmd += " -o \"" + cfg.output + "\"";
+            linkCmd += " -o \"" + cfg.output + "\"" + (cfg.run ? " && " + cfg.output : "");
 
             if (cfg.debug)
                 hp::printlnCl(std::format("\n[HelpMake] Link Command: {}", linkCmd), hp::Color::YELLOW);
@@ -629,8 +629,8 @@ void Parser::execute() {
     } else {
         displayCommand = std::format("{} -{} {} -o {}", comp, CommandFlags, cfg.inputFile, cfg.output);
 
-        command = std::format("{} -fdiagnostics-color=always {} {} -o {}",
-                              comp, CommandFlags, cfg.inputFile, cfg.output);
+        command = std::format("{} -fdiagnostics-color=always {} {} -o {} {}",
+                              comp, CommandFlags, cfg.inputFile, cfg.output, (cfg.run ? "&& " + cfg.output : ""));
 
         if (cfg.debug)
             hp::printlnCl(std::format("[HelpMake] Real Command: {}", command), hp::Color::YELLOW);
@@ -760,10 +760,14 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
             local.v_inputFiles = cfg.v_inputFiles;
         if (local.includeFiles.empty())
             local.includeFiles = cfg.includeFiles;
-
-        if (!local.version.empty()) {
-            local.version.insert(local.version.begin(), '-');
-        }
+        if (local.v_Precmd.empty())
+            local.v_Precmd = cfg.v_Precmd;
+        if (local.v_Postcmd.empty())
+            local.v_Postcmd = cfg.v_Postcmd;
+        if (local.Precmd.empty())
+            local.Precmd = cfg.Precmd;
+        if (local.Postcmd.empty())
+            local.Postcmd = cfg.Postcmd;
 
         std::string files;
         for (const auto &f : local.v_inputFiles) {
