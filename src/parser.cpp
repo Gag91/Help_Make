@@ -550,7 +550,7 @@ void Parser::execute() {
 
     int exitCode = 0;
     double elapsed = 0;
-    displayCommand = std::format("{}{} {} -o {}", comp, CommandFlags, cfg.inputFile, cfg.output);
+    displayCommand = std::format("{} {} {} -o {}", comp, CommandFlags, cfg.inputFile, cfg.output);
     if (cfg.verbose) {
         std::cout << std::format("\nCommand: {}\n", displayCommand);
     }
