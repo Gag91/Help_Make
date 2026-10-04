@@ -535,6 +535,11 @@ void Parser::execute() {
     std::string r_logPath = r_logDir + "/" + baseName + ".txt";
     std::string logPath = logDir + "/" + baseName + ".txt";
 
+    if (!cfg.version.empty()) {
+        if (cfg.version.back() != '-')
+            cfg.version.insert(cfg.version.begin(), '-');
+    }
+
     std::string CommandFlags;
     if (!cfg.version.empty())
         CommandFlags = cfg.version;
@@ -545,8 +550,6 @@ void Parser::execute() {
 
     std::string displayCommand;
     std::string command;
-    if (!cfg.version.empty())
-        cfg.version.insert(cfg.version.begin(), '-');
 
     int exitCode = 0;
     double elapsed = 0;
