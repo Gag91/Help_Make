@@ -20,3 +20,11 @@ Config: test {
     Compiler: gcc
     Version: std=c99
 }
+
+Config: hm {
+    Output: hm.exe
+}
+
+Config: hmm {
+    Output: hmm.exe
+}

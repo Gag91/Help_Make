@@ -373,6 +373,8 @@ int main(int argc, char *argv[]) {
                 config.seperate = false;
             } else if (arg == "--rebuild") {
                 config.rebuild = true;
+            } else if (arg == "--quiet") {
+                config.quiet = true;
             } else if (!arg.empty() && (arg.back() == '/' || arg.back() == '\\')) {
                 filename = std::string(arg) + "HelpMake.txt";
                 if (config.verbose)
@@ -407,7 +409,7 @@ int main(int argc, char *argv[]) {
             parser.parse();
             if (!config.create) {
                 parser.executeConfigs(selectedConfigs);
-                if (!selectedConfigs.empty() && config.allCfgs) {
+                if (!selectedConfigs.empty() && config.allCfgs && !config.quiet) {
                     hp::printlnCl("Warning: Both --config and --config-all specified. Ignoring --config.", hp::Color::YELLOW);
                 }
                 if (selectedConfigs.empty()) {
@@ -440,7 +442,8 @@ int main(int argc, char *argv[]) {
                 d_output = "a.out";
                 config.output = "a.out";
 #endif
-                hp::printlnCl("Warning: No output file specified. Using default: " + d_output, hp::Color::YELLOW);
+                if (!config.quiet)
+                    hp::printlnCl("Warning: No output file specified. Using default: " + d_output, hp::Color::YELLOW);
             }
 
             Parser parser(filename, config);

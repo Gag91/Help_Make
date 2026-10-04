@@ -57,7 +57,7 @@ void Parser::parse() {
         cfg.includeFiles = splitArgs(cfg.includes);
         cfg.v_Modules = splitArgs(cfg.modules);
 
-        if (file.exists(filename.string())) {
+        if (file.exists(filename.string()) && !cfg.quiet) {
             hp::printlnCl(std::format("Warning: {} already exists. Overwrite? (y/n)", filename.string()), hp::Color::YELLOW);
             char verif = hp::get<char>("", "Invalid choice");
             if (verif != 'y') {
@@ -525,21 +525,12 @@ void Parser::execute() {
             hp::printlnCl("Pre-build command executed successfully.", hp::Color::GREEN);
     }
 
-    std::string r_logDir = "build/HelpMake/logs/raw";
-    std::string logDir = "build/HelpMake/logs";
-    std::filesystem::create_directories(r_logDir);
-
-    std::size_t dotPos = cfg.output.find_last_of('.');
-    std::string baseName = (dotPos != std::string::npos) ? cfg.output.substr(0, dotPos) : cfg.output;
-
-    std::string r_logPath = r_logDir + "/" + baseName + ".txt";
-    std::string logPath = logDir + "/" + baseName + ".txt";
-
     if (!cfg.version.empty()) {
         if (cfg.version.back() != '-')
             cfg.version.insert(cfg.version.begin(), '-');
     }
 
+    std::filesystem::create_directories(r_logDir);
     std::string CommandFlags;
     if (!cfg.version.empty())
         CommandFlags = cfg.version;
@@ -662,9 +653,9 @@ void Parser::execute() {
             if (cfg.verbose)
                 hp::printlnCl(std::format("Running post-build command: {}", cfg.Postcmd), hp::Color::CYAN);
             int Error = std::system(cfg.Postcmd.c_str());
-            if (Error == -1)
+            if (Error == -1 && !cfg.quiet)
                 hp::printlnCl("Warning: Could not launch post-build command.", hp::Color::YELLOW);
-            else if (Error != 0)
+            else if (Error != 0 && !cfg.quiet)
                 hp::printlnCl(std::format("Warning: Post-build command failed (exit code {}).", Error), hp::Color::YELLOW);
             else if (cfg.verbose)
                 hp::printlnCl("Post-build command executed successfully.", hp::Color::GREEN);
@@ -704,7 +695,8 @@ void Parser::buildCommand() {
         exit(EXIT_FAILURE);
     }
     if (cfg.output.empty()) {
-        hp::printlnCl("Warning: No output specified. Using a.exe", hp::Color::YELLOW);
+        if (!cfg.quiet)
+            hp::printlnCl("Warning: No output specified. Using a.exe", hp::Color::YELLOW);
         cfg.output = "a.exe";
     }
 
@@ -789,14 +781,100 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
         }
 
         hp::printlnCl(std::format("\nBuilding config: {}", name), hp::Color::CYAN);
+        std::string command;
+        std::string displayCommand;
+        std::string CommandFlags;
+        displayCommand = std::format("{} {} {} -o {}", comp, CommandFlags, cfg.inputFile, cfg.output);
+        if (cfg.verbose) {
+            std::cout << std::format("\nConfig '{}': Command: {}\n", name, displayCommand);
+        }
+        int exitCode = 0;
+        if (!local.version.empty())
+            CommandFlags = local.version;
+        if (!local.modules.empty())
+            CommandFlags += (CommandFlags.empty() ? "" : " ") + local.modules;
+        if (!local.flags.empty())
+            CommandFlags += (CommandFlags.empty() ? "" : " ") + local.flags;
+        if (local.seperate) {
+            std::vector<std::string> expandedFiles;
 
-        std::string command = std::format("{} {} {} -o {} {}{}", comp, local.version, files, local.output, local.flags, incFlags);
+            for (const auto &entry : local.v_inputFiles) {
+                if (entry.find('*') != std::string::npos) {
+                    std::filesystem::path p(entry);
+                    std::string dir = p.parent_path().string();
 
-        if (cfg.verbose)
-            std::cout << std::format("Command: {}\n", command);
+                    std::string extension = p.extension().string();
+                    if (extension.empty()) {
+                        expandedFiles.push_back(entry);
+                        continue;
+                    }
 
-        int result = std::system(command.c_str());
-        if (result == 0)
+                    for (const auto &file : std::filesystem::directory_iterator(dir)) {
+                        if (file.is_regular_file() && file.path().extension() == extension)
+                            expandedFiles.push_back(file.path().string());
+                    }
+                } else {
+                    expandedFiles.push_back(entry);
+                }
+            }
+
+            if (cfg.debug) {
+                hp::printlnCl(std::format("[HelpMake] Config '{}': {} files to check:", name, expandedFiles.size()), hp::Color::YELLOW);
+                for (const auto &file : expandedFiles)
+                    hp::printlnCl(std::format("- {}", file), hp::Color::YELLOW);
+            }
+
+            std::vector<std::string> objs;
+            for (const auto &file : expandedFiles) {
+                std::string basename = std::filesystem::path(file).stem().string();
+                std::string Obj = std::format("build/HelpMake/obj/{}.o", basename);
+
+                if (!needsRebuild(file, Obj)) {
+                    if (local.debug)
+                        hp::printlnCl(std::format("[HelpMake] Config '{}' Skip (up to date): {}", name, file), hp::YELLOW);
+                    objs.push_back(Obj);
+                    continue;
+                }
+
+                std::string objCmd = std::format("{} -fdiagnostics-color=always {} -c \"{}\" -o \"{}\" -MMD", comp, CommandFlags, file, Obj);
+
+                if (cfg.debug)
+                    hp::printlnCl(std::format("[HelpMake] Config '{}': Object Command: {}\n", name, objCmd), hp::Color::YELLOW);
+
+                std::string redirectCmd = std::format("{} > \"{}\" 2>&1", objCmd, r_logPath);
+                exitCode = std::system(redirectCmd.c_str());
+                objs.push_back(Obj);
+            }
+
+            if (exitCode == 0) {
+
+                std::string linkCmd = comp + " -fdiagnostics-color=always " + CommandFlags;
+                for (const auto &obj : objs)
+                    linkCmd += " \"" + obj + "\"";
+                linkCmd += " -o \"" + local.output + "\"" + (local.run ? " && " + local.output : "");
+
+                if (cfg.debug)
+                    hp::printlnCl(std::format("\n[HelpMake] Config '{}': Link Command: {}", name, linkCmd), hp::Color::YELLOW);
+
+                std::string redirectCmd = std::format("{} > \"{}\" 2>&1", linkCmd, r_logPath);
+                exitCode = std::system(redirectCmd.c_str());
+            } else {
+                hp::printlnCl(std::format("Config '{}' compilation failed.", name), hp::Color::RED);
+                exit(EXIT_FAILURE);
+            }
+
+        } else {
+            command = std::format("{} -fdiagnostics-color=always {} {} -o {} {}",
+                                  comp, CommandFlags, local.inputFile, local.output, (local.run ? "&& " + local.output : ""));
+
+            if (cfg.debug)
+                hp::printlnCl(std::format("[HelpMake] Config '{}': Real Command: {}", name, command), hp::Color::YELLOW);
+
+            std::string redirectCmd = std::format("{} > \"{}\" 2>&1", command, r_logPath);
+            exitCode = std::system(redirectCmd.c_str());
+        }
+
+        if (exitCode == 0)
             hp::printlnCl(std::format("Config '{}' compiled successfully. Output: {}", name, local.output), hp::Color::GREEN);
         else
             hp::printlnCl(std::format("Config '{}' compilation failed.", name), hp::Color::RED);
@@ -845,7 +923,8 @@ std::string Parser::processGithubEntry(const std::string &value) {
 void Parser::generateCompileCommands() {
     std::ofstream json("compile_commands.json");
     if (!json.is_open()) {
-        hp::printlnCl("Warning: Could not write compile_commands.json", hp::Color::YELLOW);
+        if (!cfg.quiet)
+            hp::printlnCl("Warning: Could not write compile_commands.json", hp::Color::YELLOW);
         return;
     }
 
@@ -891,7 +970,8 @@ bool Parser::needsRebuild(const std::string &src, const std::string &obj) {
 
     std::ifstream depFile(std::filesystem::path(obj).replace_filename(std::filesystem::path(obj).stem().string() + ".d").generic_string());
     if (!depFile.is_open()) {
-        hp::printlnCl(std::format("Warning: Could not open dependency file for '{}'. Rebuilding.", obj), hp::Color::YELLOW);
+        if (!cfg.quiet)
+            hp::printlnCl(std::format("Warning: Could not open dependency file for '{}'. Rebuilding.", obj), hp::Color::YELLOW);
         return true;
     }
     std::string line;
@@ -911,7 +991,8 @@ bool Parser::needsRebuild(const std::string &src, const std::string &obj) {
                 continue;
 
             if (!std::filesystem::exists(depFilePath)) {
-                hp::printlnCl(std::format("Warning: Dependency file '{}' does not exist. Rebuilding.", depFilePath), hp::Color::YELLOW);
+                if (!cfg.quiet)
+                    hp::printlnCl(std::format("Warning: Dependency file '{}' does not exist. Rebuilding.", depFilePath), hp::Color::YELLOW);
                 return true;
             }
 
