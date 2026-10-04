@@ -136,6 +136,10 @@ void Parser::parse() {
 
     while (std::getline(file, line)) {
 
+        std::size_t hash = line.find('#');
+        if (hash != std::string::npos)
+            line = line.substr(0, hash);
+
         if (!line.empty() && line.back() == '\r')
             line.pop_back();
 
@@ -546,7 +550,7 @@ void Parser::execute() {
 
     int exitCode = 0;
     double elapsed = 0;
-    displayCommand = std::format("{} {} -o {}", comp, CommandFlags, cfg.output);
+    displayCommand = std::format("{}{} {} -o {}", comp, CommandFlags, cfg.inputFile, cfg.output);
     if (cfg.verbose) {
         std::cout << std::format("\nCommand: {}\n", displayCommand);
     }

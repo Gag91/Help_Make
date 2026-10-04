@@ -2,13 +2,14 @@ Compiler: g++
 InputFiles {
     src/*.cpp
 }
-Output: hmm.exe
-Includes {
+Output: hmm.exe # Testing Comments
+Includes { # Comments
     include
     .
+    # heheh
 }
 Flags {
-    -lstdc++exp
+    -lstdc++exp 
 }
 
 Config: test {
