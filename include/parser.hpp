@@ -41,6 +41,7 @@ struct Config {
     bool seperate = true;
     bool rebuild = false;
     bool quiet = false;
+    bool notify = false;
 };
 
 class Parser {
@@ -89,6 +90,7 @@ class Parser {
     void executeConfigs(const std::vector<std::string> &names);
     void generateCompileCommands();
     void install();
+    void Notify(const double &time, bool success = true);
 
     std::vector<std::string> getInputFile();
     std::vector<std::string> getInclude();

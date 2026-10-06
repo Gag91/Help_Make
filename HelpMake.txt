@@ -1,30 +1,48 @@
 Compiler: g++
+Version: std=c++20
+Output: hmm.exe
+
 InputFiles {
     src/*.cpp
 }
-Output: hmm.exe # Testing Comments
-Includes { # Comments
+
+Includes {
     include
-    .
-    # heheh
 }
+
 Flags {
-    -lstdc++exp 
+    -Wall
 }
 
-Config: test {
-    InputFiles {
-        test/test.c
+# GCC modules config
+Config: gcc {
+    Compiler: g++
+    Version: -std=c++26
+    Output: test-gcc.exe
+    Modules {
+        test/math.cppm
     }
-    Output: test.exe
-    Compiler: gcc
-    Version: std=c99
+    InputFiles {
+        test/main.cpp
+    }
+    Flags {
+        -Wall
+        -fmodules
+    }
 }
 
-Config: hm {
-    Output: hm.exe
-}
-
-Config: hmm {
-    Output: hmm.exe
+# Clang modules config
+Config: clang {
+    Compiler: clang++
+    Version: -std=c++20
+    Output: test-clang.exe
+    Modules {
+        test/math.cppm
+    }
+    InputFiles {
+        test/main.cpp
+    }
+    Flags {
+        -Wall
+    }
 }

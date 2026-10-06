@@ -174,7 +174,14 @@ int main(int argc, char *argv[]) {
         }
     } else if (argument == "--clean") {
         std::filesystem::remove_all("build/HelpMake");
-        hp::printlnCl("[HelpMake] Cleaned build/HelpMake directory.", hp::Color::GREEN);
+        hp::printlnCl("[HelpMake] Cleaned build/HelpMake", hp::Color::GREEN);
+    } else if (argument == "--clean-gcm") {
+        std::filesystem::remove_all("gcm.cache");
+        hp::printlnCl("[HelpMake] Cleaned gcm.cache", hp::Color::GREEN);
+    } else if (argument == "--clean-all") {
+        std::filesystem::remove_all("build/HelpMake");
+        std::filesystem::remove_all("gcm.cache");
+        hp::printlnCl("[HelpMake] Cleaned build/HelpMake and gcm.cache", hp::Color::GREEN);
     } else if (argument == "--init") {
         Parser::Init init;
         init.run();
@@ -379,6 +386,8 @@ int main(int argc, char *argv[]) {
                 config.rebuild = true;
             } else if (arg == "--quiet") {
                 config.quiet = true;
+            } else if (arg == "--notify") {
+                config.notify = true;
             } else if (!arg.empty() && (arg.back() == '/' || arg.back() == '\\')) {
                 filename = std::string(arg) + "HelpMake.txt";
                 if (config.verbose)
