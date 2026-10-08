@@ -221,6 +221,7 @@ void Parser::parse() {
                     }
 
                 } else if (currentBlock == "Modules") {
+                    currentConfig.v_Modules.push_back(value);
                     if (!currentConfig.modules.empty())
                         currentConfig.modules += " ";
                     currentConfig.modules += value;
@@ -643,7 +644,7 @@ void Parser::execute() {
                 std::string moduleName = extractModule(file);
                 objPath = "build/HelpMake/modules/" + baseName + ".pcm";
 
-                objCmd = std::format("{} -fdiagnostics-color=always {} --precompile \"{}\" -o \"{}\"",
+                objCmd = std::format("{} -fdiagnostics-color=always {} -c \"{}\" -o \"{}\"",
                                      comp, CommandFlags, file, objPath);
             } else {
                 objPath = std::format("build/HelpMake/obj/{}.o", baseName);
@@ -870,6 +871,11 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
 
         bool isClang = (comp == "clang++" || comp == "clang");
 
+        if (!cfg.version.empty()) {
+            if (cfg.version.front() != '-')
+                cfg.version.insert(cfg.version.begin(), '-');
+        }
+
         std::string CommandFlags;
         if (!local.version.empty())
             CommandFlags = local.version;
@@ -951,6 +957,7 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
                     std::string tag = isModule(file) ? "[Module] " : "";
                     hp::printlnCl(std::format("- {}{}", tag, file), hp::Color::YELLOW);
                 }
+                std::cout << '\n';
             }
 
             std::vector<std::string> objs;
@@ -962,7 +969,7 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
                 bool isMod = isModule(file);
                 if (isClang && isMod) {
                     objPath = "build/HelpMake/modules/" + baseName + ".pcm";
-                    objCmd = std::format("{} -fdiagnostics-color=always {} --precompile \"{}\" -o \"{}\"",
+                    objCmd = std::format("{} -fdiagnostics-color=always {} -c \"{}\" -o \"{}\"",
                                          comp, CommandFlags, file, objPath);
                 } else {
                     objPath = std::format("build/HelpMake/obj/{}.o", baseName);
