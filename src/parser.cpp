@@ -14,6 +14,15 @@
 #include <map>
 #include <regex>
 #include <sstream>
+#include <vector>
+
+static bool isDeclaredModule(const std::string &file, const std::vector<std::string> &modules) {
+    for (const auto &m : modules) {
+        if (std::filesystem::path(m).lexically_normal() == std::filesystem::path(file).lexically_normal())
+            return true;
+    }
+    return false;
+}
 
 static std::string trim(const std::string &s) {
     std::size_t start = s.find_first_not_of(" \t\r\n");
@@ -564,15 +573,9 @@ void Parser::execute() {
     if (!cfg.flags.empty())
         CommandFlags += (CommandFlags.empty() ? "" : " ") + cfg.flags;
 
-    std::string displayCommand;
-    std::string command;
-
     int exitCode = 0;
     double elapsed = 0;
-    displayCommand = std::format("{} {} {} -o {}", comp, CommandFlags, cfg.inputFile, cfg.output);
-    if (cfg.verbose) {
-        std::cout << std::format("\nCommand: {}\n", displayCommand);
-    }
+
     auto timer = hp::startTimer();
     if (cfg.seperate) {
 
@@ -621,7 +624,9 @@ void Parser::execute() {
             expandedFiles.push_back(m);
         }
         std::partition(expandedFiles.begin(), expandedFiles.end(),
-                       [](const std::string &s) { return isModule(s); });
+                       [&](const std::string &s) {
+                           return isModule(s) || isDeclaredModule(s, cfg.v_Modules);
+                       });
 
         if (cfg.debug) {
             hp::printlnCl(std::format("[HelpMake] {} files to check:", expandedFiles.size()), hp::Color::YELLOW);
@@ -640,12 +645,37 @@ void Parser::execute() {
             std::string objPath;
 
             bool isMod = isModule(file);
-            if (isClang && isMod) {
-                std::string moduleName = extractModule(file);
-                objPath = "build/HelpMake/modules/" + baseName + ".pcm";
+            bool userDeclared = isDeclaredModule(file, cfg.v_Modules);
+            bool treatAsModule = isMod || userDeclared;
 
-                objCmd = std::format("{} -fdiagnostics-color=always {} -c \"{}\" -o \"{}\"",
-                                     comp, CommandFlags, file, objPath);
+            if (isClang && treatAsModule) {
+                std::string moduleName = extractModule(file);
+                std::string pcmPath = "build/HelpMake/modules/" + baseName + ".pcm";
+                std::string moduleObj = "build/HelpMake/obj/" + baseName + ".o";
+
+                std::string langFlag;
+                if (!isMod)
+                    langFlag = "-xc++-module ";
+
+                if (needsRebuild(file, pcmPath)) {
+                    std::string pcmCmd = std::format("{} -fdiagnostics-color=always {}{} --precompile \"{}\" -o \"{}\"",
+                                                     comp, langFlag, CommandFlags, file, pcmPath);
+
+                    if (cfg.debug)
+                        hp::printlnCl(std::format("[HelpMake] Precompile Command: {}", pcmCmd), hp::Color::YELLOW);
+
+                    std::string redirectCmd = std::format("{} > \"{}\" 2>&1", pcmCmd, r_logPath);
+                    exitCode = std::system(redirectCmd.c_str());
+
+                    if (exitCode != 0) {
+                        hp::printlnCl(std::format("[HelpMake] Failed to precompile: {}", file), hp::Color::RED);
+                        break;
+                    }
+                }
+
+                objPath = moduleObj;
+                objCmd = std::format("{} -fdiagnostics-color=always {}{} -c \"{}\" -o \"{}\" -MMD -fmodule-file={}={}",
+                                     comp, langFlag, CommandFlags, file, moduleObj, moduleName, pcmPath);
             } else {
                 objPath = std::format("build/HelpMake/obj/{}.o", baseName);
                 objCmd = std::format("{} -fdiagnostics-color=always {} -c \"{}\" -o \"{}\" -MMD",
@@ -684,7 +714,6 @@ void Parser::execute() {
         }
 
         if (exitCode == 0) {
-
             std::string linkCmd = comp + " -fdiagnostics-color=always " + CommandFlags;
             for (const auto &obj : objects)
                 linkCmd += " \"" + obj + "\"";
@@ -700,10 +729,8 @@ void Parser::execute() {
         }
 
     } else {
-        displayCommand = std::format("{} -{} {} -o {}", comp, CommandFlags, cfg.inputFile, cfg.output);
-
-        command = std::format("{} -fdiagnostics-color=always {} {} -o {} {}",
-                              comp, CommandFlags, cfg.inputFile, cfg.output, (cfg.run ? "&& " + cfg.output : ""));
+        std::string command = std::format("{} -fdiagnostics-color=always {} {} -o {} {}",
+                                          comp, CommandFlags, cfg.inputFile, cfg.output, (cfg.run ? "&& " + cfg.output : ""));
 
         if (cfg.debug)
             hp::printlnCl(std::format("[HelpMake] Real Command: {}", command), hp::Color::YELLOW);
@@ -850,19 +877,6 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
         if (local.Postcmd.empty())
             local.Postcmd = cfg.Postcmd;
 
-        std::string files;
-        for (const auto &f : local.v_inputFiles) {
-            if (!files.empty())
-                files += " ";
-            files += f;
-        }
-        if (files.empty())
-            files = local.inputFile;
-
-        std::string incFlags;
-        for (const auto &inc : local.includeFiles)
-            incFlags += std::format(" -I{}", inc);
-
         std::string comp = compilerCommand(local.compiler);
         if (comp.empty()) {
             hp::printlnCl(std::format("Error: Unsupported compiler '{}'", local.compiler), hp::Color::RED);
@@ -871,9 +885,9 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
 
         bool isClang = (comp == "clang++" || comp == "clang");
 
-        if (!cfg.version.empty()) {
-            if (cfg.version.front() != '-')
-                cfg.version.insert(cfg.version.begin(), '-');
+        if (!local.version.empty()) {
+            if (local.version.front() != '-')
+                local.version.insert(local.version.begin(), '-');
         }
 
         std::string CommandFlags;
@@ -949,7 +963,9 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
             }
 
             std::partition(expandedFiles.begin(), expandedFiles.end(),
-                           [](const std::string &s) { return isModule(s); });
+                           [&](const std::string &s) {
+                               return isModule(s) || isDeclaredModule(s, local.v_Modules);
+                           });
 
             if (cfg.debug) {
                 hp::printlnCl(std::format("[HelpMake] Config '{}': {} files to check:", name, expandedFiles.size()), hp::Color::YELLOW);
@@ -966,11 +982,38 @@ void Parser::executeConfigs(const std::vector<std::string> &names) {
                 std::string objPath;
                 std::string objCmd;
 
-                bool isMod = isModule(file);
-                if (isClang && isMod) {
-                    objPath = "build/HelpMake/modules/" + baseName + ".pcm";
-                    objCmd = std::format("{} -fdiagnostics-color=always {} -c \"{}\" -o \"{}\"",
-                                         comp, CommandFlags, file, objPath);
+                bool fileIsModule = isModule(file);
+                bool userDeclared = isDeclaredModule(file, local.v_Modules);
+                bool treatAsModule = fileIsModule || userDeclared;
+
+                if (isClang && treatAsModule) {
+                    std::string moduleName = extractModule(file);
+                    std::string pcmPath = "build/HelpMake/modules/" + baseName + ".pcm";
+                    std::string moduleObj = "build/HelpMake/obj/" + baseName + ".o";
+
+                    std::string langFlag;
+                    if (!fileIsModule)
+                        langFlag = "-xc++-module ";
+
+                    if (needsRebuild(file, pcmPath)) {
+                        std::string pcmCmd = std::format("{} -fdiagnostics-color=always {}{} --precompile \"{}\" -o \"{}\"",
+                                                         comp, langFlag, CommandFlags, file, pcmPath);
+
+                        if (cfg.debug)
+                            hp::printlnCl(std::format("[HelpMake] Config '{}': Precompile Command: {}", name, pcmCmd), hp::Color::YELLOW);
+
+                        std::string redirectCmd = std::format("{} > \"{}\" 2>&1", pcmCmd, r_logPath);
+                        exitCode = std::system(redirectCmd.c_str());
+
+                        if (exitCode != 0) {
+                            hp::printlnCl(std::format("\n[HelpMake] Config '{}': Failed to precompile: {}", name, file), hp::Color::RED);
+                            break;
+                        }
+                    }
+
+                    objPath = moduleObj;
+                    objCmd = std::format("{} -fdiagnostics-color=always {}{} -c \"{}\" -o \"{}\" -MMD -fmodule-file={}={}",
+                                         comp, langFlag, CommandFlags, file, moduleObj, moduleName, pcmPath);
                 } else {
                     objPath = std::format("build/HelpMake/obj/{}.o", baseName);
                     objCmd = std::format("{} -fdiagnostics-color=always {} -c \"{}\" -o \"{}\" -MMD",
@@ -1160,20 +1203,20 @@ bool Parser::needsRebuild(const std::string &src, const std::string &obj) {
     auto srcTime = std::filesystem::last_write_time(src);
     auto objTime = std::filesystem::last_write_time(obj);
 
-    std::ifstream depFile(std::filesystem::path(obj).replace_filename(std::filesystem::path(obj).stem().string() + ".d").generic_string());
-    if (!depFile.is_open()) {
-        if (!cfg.quiet)
-            hp::printlnCl(std::format("Warning: Could not open dependency file for '{}'. Rebuilding.", obj), hp::Color::YELLOW);
-        return true;
-    }
-    std::string line;
-    auto depTime = std::filesystem::file_time_type::min();
-
     if (srcTime > objTime) {
         if (cfg.debug)
             hp::printlnCl(std::format("[Debug] Source file '{}' is newer than object '{}'. Rebuilding.", src, obj), hp::Color::YELLOW);
         return true;
     }
+
+    std::ifstream depFile(std::filesystem::path(obj).replace_filename(std::filesystem::path(obj).stem().string() + ".d").generic_string());
+    if (!depFile.is_open()) {
+        if (!cfg.quiet)
+            hp::printlnCl(std::format("Warning: Could not open dependency file for '{}'. Rebuilding.\n", obj), hp::Color::YELLOW);
+        return true;
+    }
+    std::string line;
+    auto depTime = std::filesystem::file_time_type::min();
 
     while (std::getline(depFile, line)) {
         std::istringstream iss(line);

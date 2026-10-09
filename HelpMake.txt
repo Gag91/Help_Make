@@ -37,7 +37,7 @@ Config: clang {
     Version: -std=c++20
     Output: test-clang.exe
     Modules {
-        test/math.cppm
+        test/math.module
     }
     InputFiles {
         test/main.cpp
