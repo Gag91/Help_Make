@@ -20,7 +20,7 @@ Config: gcc {
     Version: -std=c++26
     Output: test-gcc.exe
     Modules {
-        test/math.cppm
+        test/math.module
     }
     InputFiles {
         test/main.cpp

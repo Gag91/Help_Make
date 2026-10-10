@@ -1,10 +1,13 @@
 #include "hp/colors/color.hpp"
 #include "hp/other/other.hpp"
+#include "hp/time/time.hpp"
 #include "parser.hpp"
 
+#include <array>
 #include <filesystem>
 #include <format>
 #include <iostream>
+#include <string_view>
 
 static std::string ask(const std::string &label, const std::string &defaultVal) {
     std::cout << "  " << hp::getColorCode(hp::CYAN) << label << ": ";
@@ -32,7 +35,7 @@ static bool askYesNo(const std::string &label, bool defaultYes = true) {
 Parser::Init::Init() = default;
 
 std::string Parser::Init::detectFiles() {
-    std::vector<std::string> extensions = {".cpp", ".c", ".cc", ".cxx", ".zig", ".rs"};
+    constexpr std::array<std::string_view, 6> extensions = {".cpp", ".c", ".cc", ".cxx", ".zig", ".rs"};
 
     for (const auto &ext : extensions) {
         std::size_t count = 0;
@@ -43,7 +46,7 @@ std::string Parser::Init::detectFiles() {
                 }
             }
             if (count > 0)
-                return "src/*" + ext;
+                return "src/*" + std::string(ext);
         }
 
         count = 0;
@@ -53,17 +56,17 @@ std::string Parser::Init::detectFiles() {
             }
         }
         if (count > 0)
-            return "*" + ext;
+            return "*" + std::string(ext);
     }
 
     return "src/*.cpp";
 }
 
 std::string Parser::Init::detectIncludes() {
-    std::vector<std::string> candidates = {"include", "inc", "headers", "src"};
+    constexpr std::array<std::string_view, 4> candidates = {"include", "inc", "headers", "src"};
     for (const auto &dir : candidates) {
         if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir)) {
-            return dir;
+            return std::string(dir);
         }
     }
     return "";
@@ -81,16 +84,19 @@ std::string Parser::Init::defaultOutput() {
 }
 
 void Parser::Init::chooseLanguage() {
-    std::cout << "\n  " << hp::getColorCode(hp::CYAN)
-              << "Choose language:" << hp::getColorCode(hp::RESET) << "\n";
-    std::cout << "    1) C++ (GCC)          g++\n";
-    std::cout << "    2) C++ (Clang)        clang++\n";
-    std::cout << "    3) C   (GCC)          gcc\n";
-    std::cout << "    4) C   (Clang)        clang\n";
-    std::cout << "    5) Zig                zig\n";
-    std::cout << "    6) Custom\n";
-    std::cout << "  " << hp::getColorCode(hp::CYAN) << "> ";
-    std::cout << hp::getColorCode(hp::RESET);
+    constexpr std::string_view base = R"(   
+   1) C++ (GCC)          g++ 
+   2) C++ (Clang)        clang++  
+   3) C   (GCC)          gcc  
+   4) C   (Clang)        clang    
+   5) Zig                zig   
+   6) Custom
+
+)";
+
+    std::cout << base << "\n  " << hp::getColorCode(hp::CYAN)
+              << "Choose language:" << hp::getColorCode(hp::RESET) << "\n"
+              << hp::getColorCode(hp::CYAN) << "> " << hp::getColorCode(hp::RESET);
 
     int choice;
     std::cin >> choice;
@@ -123,6 +129,9 @@ void Parser::Init::chooseLanguage() {
             break;
         default:
             hp::printlnCl("  Invalid choice. Try again.", hp::RED);
+            hp::wait(1);
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             chooseLanguage();
     }
 }
@@ -159,7 +168,7 @@ void Parser::Init::showPreview() {
         std::cout << "  " << hp::getColorCode(hp::BRIGHT_BLACK) << "Flags:    "
                   << hp::getColorCode(hp::RESET) << InitCfg.flags << "\n";
     }
-    std::cout << " " << hp::getColorCode(hp::BRIGHT_BLACK) << "Generate compile_commands.json: "
+    std::cout << " " << hp::getColorCode(hp::BRIGHT_BLACK) << "  Generate compile_commands.json: "
               << hp::getColorCode(hp::RESET) << InitCfg.json
         ? "true\n"
         : "false\n";
@@ -174,9 +183,9 @@ void Parser::Init::previewAndSave() {
         std::cout << "  " << hp::getColorCode(hp::CYAN) << "Actions: "
                   << hp::getColorCode(hp::BRIGHT_BLACK)
                   << "[S]ave  [E]dit  [C]ancel "
+                  << hp::getColorCode(hp::RESET)
+                  << hp::getColorCode(hp::CYAN) << "> "
                   << hp::getColorCode(hp::RESET);
-        std::cout << hp::getColorCode(hp::CYAN) << "> ";
-        std::cout << hp::getColorCode(hp::RESET);
 
         std::string action;
         std::getline(std::cin, action);

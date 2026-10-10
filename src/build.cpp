@@ -7,9 +7,6 @@
 #include <fstream>
 
 class Build {
-  private:
-    hp::BorderChars chars = hp::getBorderChars(hp::EXTENDED);
-
   public:
     Build() = default;
     void help() const {
