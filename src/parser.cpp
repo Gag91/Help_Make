@@ -802,7 +802,7 @@ void Parser::execute() {
         exit(EXIT_FAILURE);
     }
 
-    if (cfg.verbose)
+    if (cfg.verbose || cfg.time)
         std::cout << std::format("Compiling time: {}s\n", elapsed);
 }
 

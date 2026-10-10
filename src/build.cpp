@@ -385,6 +385,8 @@ int main(int argc, char *argv[]) {
                 config.quiet = true;
             } else if (arg == "--notify") {
                 config.notify = true;
+            } else if (arg == "--time") {
+                config.time = true;
             } else if (!arg.empty() && (arg.back() == '/' || arg.back() == '\\')) {
                 filename = std::string(arg) + "HelpMake.txt";
                 if (config.verbose)

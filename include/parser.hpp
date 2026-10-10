@@ -42,6 +42,7 @@ struct Config {
     bool rebuild = false;
     bool quiet = false;
     bool notify = false;
+    bool time = false;
 };
 
 class Parser {
